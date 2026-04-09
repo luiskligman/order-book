@@ -7,6 +7,7 @@
 #include <map>
 #include <deque>
 #include <functional>
+#include <unordered_map>
 
 // Convenience alias - we use this type everywhere in the book.
 // shared_ptr<const Order<double, int>> means:
@@ -15,6 +16,8 @@
 using OrderPtr = std::shared_ptr<const Order<double, int>>;
 
 class OrderBook {
+   friend class MatchingEngine;
+
  public:
     // Add an order to the appropriate side of the book
     void add_order(OrderPtr order);
@@ -31,9 +34,10 @@ class OrderBook {
 
     // Print the current book state to stdout
     void print() const;
+    void print(const std::unordered_map<OrderID, int>& remaining_qty) const;
 
  private: 
-    // Bids: highest price first - std::greater<double> reverses the default 
+    // Bids: highest price first, use std::greater<double> to reverse the default 
     // ascending order so bids_[0] is always the best (highest) bid.
     std::map<double, std::deque<OrderPtr>, std::greater<double>> bids_;
     
@@ -42,7 +46,7 @@ class OrderBook {
     std::map<double, std::deque<OrderPtr>> asks_;
 
     // Flat index: OrderID -> pointer into the book
-    // O(log n) lookup on cancel
-    std::map<OrderID, OrderPtr> order_index_;
+    // O(1) lookup time complexity
+    std::unordered_map<OrderID, OrderPtr> order_index_;
 
 };

@@ -1,34 +1,41 @@
 
-#include "order_book.h"
+#include "matching_engine.h"
 
 #include <iostream>
+#include <iomanip>
 
 int main() {
     OrderBook book;
+    MatchingEngine engine(book);
 
-    // Post limit orders on the buy side
-    book.add_order(std::make_shared<LimitOrder>(1, Side::BUY, 100, 149.50));
-    book.add_order(std::make_shared<LimitOrder>(2, Side::BUY, 200, 150.00));
-    book.add_order(std::make_shared<LimitOrder>(3, Side::BUY, 50, 150.00));
+    std::cout << std::fixed << std::setprecision(2);
 
-    // Post limit orders on the sell side
-    book.add_order(std::make_shared<LimitOrder>(4, Side::SELL, 150, 151.00));
-    book.add_order(std::make_shared<LimitOrder>(5, Side::SELL, 75, 152.50));
+    // Resting orders, none of these cross so no trades execute yet
+    engine.submit(std::make_shared<LimitOrder>(1, Side::BUY, 100, 150.00));
+    engine.submit(std::make_shared<LimitOrder>(2, Side::BUY, 50, 149.50));
+    engine.submit(std::make_shared<LimitOrder>(3, Side::SELL, 75, 151.00));
+    engine.submit(std::make_shared<LimitOrder>(4, Side::SELL, 100, 152.00));
 
-    // Print intial state
-    std::cout << "--- Initial book ---";
-    book.print();
+    std::cout << "--- Initial Book ---";
+    book.print(engine.get_remaining());
 
-    // Cancel order 2 and reprint
-    book.cancel_order(2);
-    std::cout << "--- After cancelling order 2 ---";
-    book.print();
+    // Incoming SELL limit crosses the best bid - partial fill on order 1
+    std::cout << "--- SELL 80 @ 150.00 ---\n";
+    auto trades = engine.submit(std::make_shared<LimitOrder>(5, Side::SELL, 80, 150));
+    for (const auto& t : trades)
+        std::cout << "  TRADE: maker=" << t.maker_id << " taker=" << t.taker_id
+            << " price=$" << t.price << " qty=" << t.quantity << "\n";
+    
+    book.print(engine.get_remaining());
 
-    // Check best bid and ask explicitly
-    auto bb = book.best_bid();
-    auto ba = book.best_ask();
-    std::cout << "Best bid: " << (bb ? std::to_string(*bb) : "none") << "\n";
-    std::cout << "Best ask: " << (ba ? std::to_string(*ba) : "none") << "\n";
+    // Market order sweeps two ask levels
+    std::cout << "--- BUY MARKET 120 ---\n";
+    trades = engine.submit(std::make_shared<MarketOrder>(6, Side::BUY, 120));
+    for (const auto& t : trades)
+        std::cout << "  TRADE: maker=" << t.maker_id << " taker=" << t.taker_id
+            << " price=$" << t.price << " qty=" << t.quantity << "\n";
+    
+    book.print(engine.get_remaining());
 
     return 0;
 }

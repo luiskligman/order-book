@@ -7,7 +7,7 @@
 void OrderBook::add_order(OrderPtr order) {
     // Route to the correct side
     if (order->side() == Side::BUY) {
-        bids_[order->price()].push_back(order);
+        bids_[order->price()].push_back(order);  // Use .push_back() to ensure price-time priority
     } else {
         asks_[order->price()].push_back(order);
     }
@@ -69,7 +69,7 @@ void OrderBook::print() const {
     // Print asks in reverse so highest ask is at the top
     for (auto price_level = asks_.rbegin(); price_level != asks_.rend(); ++price_level) {
         int total_qty = 0;
-        for (const auto& o : price_level->second) total_qty += o->quantity();
+        for (const auto& order : price_level->second) total_qty += order->quantity();
         std::cout << "    $" << price_level->first << "  qty=" << total_qty
             << "  (" << price_level->second.size() << " order(s))\n";
     }
@@ -84,7 +84,43 @@ void OrderBook::print() const {
     std::cout <<  "  BIDS (highest first):\n";
     for (const auto& [price, orders] : bids_) {
         int total_qty = 0;
-        for (const auto& o : orders) total_qty += o->quantity();
+        for (const auto& order : orders) total_qty += order->quantity();
+        std::cout << "    $" << price << "  qty=" << total_qty
+            << "  (" << orders.size() << " order(s))\n";
+    }
+    std::cout << "==================\n\n";
+}
+
+void OrderBook::print(const std::unordered_map<OrderID, int>& remaining_qty) const {
+    std::cout << "\n=== ORDER BOOK ===\n";
+    std::cout << std::fixed << std::setprecision(2);
+
+    std::cout << "  ASKS (lowest first):\n";
+    // Print asks in reverse so highest ask is at the top
+    for (auto price_level = asks_.rbegin(); price_level != asks_.rend(); ++price_level) {
+        int total_qty = 0;
+        for (const auto& order : price_level->second) {
+            auto remaining = remaining_qty.find(order->id());
+            total_qty += (remaining != remaining_qty.end()) ? remaining->second : order->quantity();
+        }
+        std::cout << "    $" << price_level->first << "  qty=" << total_qty
+            << "  (" << price_level->second.size() << " order(s))\n";
+    }
+
+    auto bid = best_bid();
+    auto ask = best_ask();
+    if (bid && ask)
+        std::cout << "  --- spread: $" << (*ask - *bid) << " ---\n";
+    else
+        std::cout << "  --- no spread (book not crossed) ---\n";
+
+    std::cout <<  "  BIDS (highest first):\n";
+    for (const auto& [price, orders] : bids_) {
+        int total_qty = 0;
+        for (const auto& order : orders) {
+            auto remaining = remaining_qty.find(order->id());
+            total_qty += (remaining != remaining_qty.end()) ? remaining->second : order->quantity();
+        }
         std::cout << "    $" << price << "  qty=" << total_qty
             << "  (" << orders.size() << " order(s))\n";
     }
