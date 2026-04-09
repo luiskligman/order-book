@@ -124,5 +124,5 @@ struct Trade {
 | `std::deque` | Per-level FIFO queue for price-time priority |
 | `std::optional` | `best_bid()`/`best_ask()` return nothing when book is empty |
 | Lambdas | `price_acceptable` in matching loop, captures incoming order, evaluted per fill |
-| std::unordered_map | remaining quantity lookup |
+| `std::unordered_map` | remaining quantity lookup |
 
