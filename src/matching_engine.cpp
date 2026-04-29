@@ -21,14 +21,21 @@ std::vector<Trade> MatchingEngine::submit(OrderPtr incoming) {
         book_.add_order(incoming);
         remaining_qty_[incoming->id()] = remaining;
     }
-
-    // Check if the last fill price triggers any waiting stop orders
-    if (!trades.empty()) {
-        auto stop_trades = check_stops(trades.back().price);
-        trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
-    }
     
     return trades; 
+}
+
+void MatchingEngine::print() const {
+    std::cout << "\n=== ORDER BOOK ===\n";
+    std::cout << std::fixed << std::setprecision(2);
+
+    std::cout << "  ASKS (lowest first):\n";
+    for (auto price_level = book_.asks_.rbegin(); price_level != book_.asks_.rend(); ++price_level) {
+        int total_qty = 0;
+        for (const auto& order : price_level->second) total_qty += order->quantity();
+        std::cout << "    $" << price_level->first << "  qty=" << total_qty
+                  << "  (" << price_level->second.size() << " order(s))\n";
+    }
 }
 
 std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
@@ -60,6 +67,10 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
             remaining -= fill_qty;
             remaining_qty_[maker->id()] -= fill_qty;
 
+            // Check if the last fill price triggers any waiting stop orders
+            auto stop_trades = check_stops(trades.back().price);
+            trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
+
             // If the maker is fully filled, remove it from the book entirely
             if (remaining_qty_[maker->id()] == 0) {
                 queue.pop_front();  // remove best ask from the deque, no more available quantity to offer
@@ -84,6 +95,10 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
 
             remaining -= fill_qty;
             remaining_qty_[maker->id()] -= fill_qty;
+
+            // Check if the last fill price triggers any waiting stop orders
+            auto stop_trades = check_stops(trades.back().price);
+            trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
 
             if (remaining_qty_[maker->id()] == 0) {
                 queue.pop_front();  // remove best bid from the deque, no more available quantity to offer
@@ -130,3 +145,5 @@ std::vector<Trade> MatchingEngine::check_stops(double last_price) {
 
     return trades;
 }
+
+
