@@ -36,6 +36,36 @@ void MatchingEngine::print() const {
         std::cout << "    $" << price_level->first << "  qty=" << total_qty
                   << "  (" << price_level->second.size() << " order(s))\n";
     }
+
+    auto bid = book_.best_bid();
+    auto ask = book_.best_ask();
+
+    if (bid && ask) {
+        std::cout << "  --- spread: $" << (*ask - *bid) << " ---\n";
+    } else {
+        std::cout << "  --- no spread (book not crossed) ---\n";
+    }
+
+    std::cout << "  BIDS (higest first):\n";
+    for (const auto& [price, orders] : book_.bids_) {
+        int total_qty = 0;
+        for (const auto& order : orders) 
+            total_qty += remaining_qty_.at(order->id());  // use .at() to maintain const
+            std::cout << "    $" << price << "  qty=" << total_qty
+                      << "  (" << orders.size() << " order(s))\n"; 
+    }
+
+    std::cout << "  RESTING STOP ORDERS (normally hidden):\n";
+    if (pending_stops_.empty()) {
+        std::cout << " no resting stop orders\n";
+    } else {
+        for (const auto& order : pending_stops_) {
+            std::cout << "    $" << order->price() << "  qty=" << order->quantity()
+                      << "  side=" << (order->side() == Side::BUY ? "BUY" : "SELL"); 
+        }
+    }
+
+    std::cout << "\n==================\n";
 }
 
 std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
