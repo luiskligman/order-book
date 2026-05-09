@@ -38,13 +38,14 @@ int main() {
     engine.print();
     // book.print();  // should be identical at this step
 
-    // std::cout << "\n--- SELL MARKET 101 ---\n";
-    // auto trades = engine.submit(std::make_shared<MarketOrder>(9, Side::SELL, 101));
-    // for (const auto& t : trades)
-    //      std::cout << "  TRADE: maker=" << t.maker_id << " taker=" << t.taker_id
-    //          << " price=$" << t.price << " qty=" << t.quantity << "\n";
+    std::cout << "\n--- SELL MARKET 101 ---\n";
+    auto trades = engine.submit(std::make_shared<MarketOrder>(9, Side::SELL, 201));
+    for (const auto& t : trades)
+         std::cout << "  TRADE: maker=" << t.maker_id << " taker=" << t.taker_id
+             << " price=$" << t.price << " qty=" << t.quantity << "\n";
 
     engine.print();
+
 
 
     // Incoming SELL limit crosses the best bid - partial fill on order 1
