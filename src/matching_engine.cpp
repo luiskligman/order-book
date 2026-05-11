@@ -8,7 +8,9 @@ MatchingEngine::MatchingEngine(OrderBook& book) : book_(book) {}
 std::vector<Trade> MatchingEngine::submit(OrderPtr incoming) {
     // Stop orders are not marketable, they sit in pending until triggered
     if (!incoming->is_marketable()) {
-        pending_stops_.push_back(incoming);
+        incoming->side() == Side::BUY ? 
+                buy_stops_[incoming->price()].push_back(incoming) 
+                : sell_stops_[incoming->price()].push_back(incoming);
         return {};
     }
 
@@ -56,12 +58,22 @@ void MatchingEngine::print() const {
     }
 
     std::cout << "  RESTING STOP ORDERS (normally hidden):\n";
-    if (pending_stops_.empty()) {
+    if (buy_stops_.empty()  && sell_stops_.empty()) {
         std::cout << " no resting stop orders\n";
     } else {
-        for (const auto& order : pending_stops_) {
-            std::cout << "    $" << order->price() << "  qty=" << order->quantity()
-                      << "  side=" << (order->side() == Side::BUY ? "BUY" : "SELL"); 
+        std::cout << "  SELL STOPS (descending):\n";
+        for (const auto& [price, orders] : sell_stops_) {
+            for (const auto& order : orders) {
+                std::cout << "    $" << order->price() << "  qty=" << order->quantity()
+                          << "  side=" << (order->side() == Side::BUY ? "BUY" : "SELL") << "\n"; 
+            }
+        }
+        std::cout << "  BUY STOPS (descending):\n";
+        for (const auto& [price, orders] : sell_stops_) {
+            for (const auto& order : orders) {
+                std::cout << "    $" << order->price() << "  qty=" << order->quantity()
+                          << "  side=" << (order->side() == Side::BUY ? "BUY" : "SELL") << "\n"; 
+            }
         }
     }
 
@@ -97,10 +109,6 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
             remaining -= fill_qty;
             remaining_qty_[maker->id()] -= fill_qty;
 
-            // Check if the last fill price triggers any waiting stop orders
-            auto stop_trades = check_stops(trades.back().price);
-            trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
-
             // If the maker is fully filled, remove it from the book entirely
             if (remaining_qty_[maker->id()] == 0) {
                 queue.pop_front();  // remove best ask from the deque, no more available quantity to offer
@@ -127,6 +135,7 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
             remaining_qty_[maker->id()] -= fill_qty;
 
             // Check if the last fill price triggers any waiting stop orders
+
             auto stop_trades = check_stops(trades.back().price);
             trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
 
@@ -145,8 +154,8 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
 std::vector<Trade> MatchingEngine::check_stops(double last_price) {
     std::vector<Trade> trades;
 
-    for (auto stop_iter = pending_stops_.begin(); stop_iter != pending_stops_.end(); ) {
-        OrderPtr stop = *stop_iter;
+    for (auto stop_iter = buy_stops_.begin(); stop_iter != buy_stops_.end(); ) {
+        OrderPtr stop = stop_iter->second.front();
         double trigger = stop->price();
 
         // BUY stop triggers when price rises to or above the trigger
@@ -167,7 +176,7 @@ std::vector<Trade> MatchingEngine::check_stops(double last_price) {
             int remaining = market->quantity();
             auto stop_trades = match(market, remaining);
             trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
-            stop_iter = pending_stops_.erase(stop_iter);
+            //stop_iter = pending_stops_.erase(stop_iter);
         } else {
             ++stop_iter;
         }

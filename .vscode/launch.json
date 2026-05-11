@@ -1,0 +1,31 @@
+  {                                                                                                                                                                                                                                                           
+      "version": "0.2.0",                                                                                                                                                                                                                                   
+      "configurations": [
+          {
+              "name": "Debug test_matching_engine1",
+              "type": "cppdbg",                                                                                                                                                                                                                               
+              "request": "launch",
+              "program": "${workspaceFolder}/build/test_matching_engine1",                                                                                                                                                                                    
+              "args": [],                                                                                                                                                                                                                                   
+              "stopAtEntry": false,
+              "cwd": "${workspaceFolder}",                                                                                                                                                                                                                    
+              "environment": [],
+              "externalConsole": false,                                                                                                                                                                                                                       
+              "MIMode": "gdb",                                                                                                                                                                                                                              
+              "preLaunchTask": "CMake Build"
+          },                                                                                                                                                                                                                                                  
+          {
+              "name": "Debug order_book",                                                                                                                                                                                                                     
+              "type": "cppdbg",                                                                                                                                                                                                                             
+              "request": "launch",
+              "program": "${workspaceFolder}/build/order_book",
+              "args": [],                                                                                                                                                                                                                                     
+              "stopAtEntry": false,
+              "cwd": "${workspaceFolder}",                                                                                                                                                                                                                    
+              "environment": [],                                                                                                                                                                                                                            
+              "externalConsole": false,
+              "MIMode": "gdb",
+              "preLaunchTask": "CMake Build"                                                                                                                                                                                                                  
+          }
+      ]                                                                                                                                                                                                                                                       
+  }    

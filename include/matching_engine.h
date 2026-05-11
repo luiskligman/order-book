@@ -26,7 +26,9 @@ class MatchingEngine {
     std::unordered_map<OrderID, int> remaining_qty_;
 
     // Stop orders waiting for their trigger price to be hit
-    std::vector<OrderPtr> pending_stops_;
+    //std::vector<OrderPtr> pending_stops_;
+    std::map<double, std::deque<OrderPtr>> buy_stops_;  // ascending - trigger when price rises
+    std::map<double, std::deque<OrderPtr>, std::greater<double>> sell_stops_;  // descending - trigger when price falls
 
     // Core matching loop. Modifies 'remaining' in place
     std::vector<Trade> match(OrderPtr incoming, int& remaining);

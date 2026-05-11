@@ -70,7 +70,7 @@ void OrderBook::print() const {
     for (auto price_level = asks_.rbegin(); price_level != asks_.rend(); ++price_level) {
         int total_qty = 0;
         for (const auto& order : price_level->second) total_qty += order->quantity();
-        std::cout << "    $" << price_level->first << "  qty=" << total_qty
+        std::cout << "    $" << price_level->first << "  qty=" << total_qty 
             << "  (" << price_level->second.size() << " order(s))\n";
     }
 

@@ -1,1 +1,1 @@
-/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/test_matching_engine1.dir/tests/test_matching_engine1.cpp.o CMakeFiles/test_matching_engine1.dir/src/order_book.cpp.o CMakeFiles/test_matching_engine1.dir/src/matching_engine.cpp.o -o test_matching_engine1
+/usr/bin/g++ -g CMakeFiles/test_matching_engine1.dir/tests/test_matching_engine1.cpp.o CMakeFiles/test_matching_engine1.dir/src/order_book.cpp.o CMakeFiles/test_matching_engine1.dir/src/matching_engine.cpp.o -o test_matching_engine1 

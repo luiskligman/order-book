@@ -1,1 +1,1 @@
-/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/order_book.dir/src/main.cpp.o CMakeFiles/order_book.dir/src/order_book.cpp.o CMakeFiles/order_book.dir/src/matching_engine.cpp.o CMakeFiles/order_book.dir/src/order_queue.cpp.o -o order_book
+/usr/bin/g++ -g CMakeFiles/order_book.dir/src/main.cpp.o CMakeFiles/order_book.dir/src/order_book.cpp.o CMakeFiles/order_book.dir/src/matching_engine.cpp.o CMakeFiles/order_book.dir/src/order_queue.cpp.o -o order_book 

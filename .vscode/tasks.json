@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "CMake Configure",
+            "type": "shell",
+            "command": "cmake -S ${workspaceFolder} -B ${workspaceFolder}/build -DCMAKE_BUILD_TYPE=Debug",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "CMake Build",
+            "type": "shell",
+            "command": "cmake --build ${workspaceFolder}/build",
+            "dependsOn": "CMake Configure",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Run Tests",
+            "type": "shell",
+            "command": "ctest --test-dir ${workspaceFolder}/build --output-on-failure",
+            "dependsOn": "CMake Build",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
