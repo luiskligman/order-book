@@ -19,27 +19,25 @@ int main() {
 
     // Create many resting BIDs
 
-    // 3 LimitOrders - 100 resting bids @ 150.00
-    engine.submit(std::make_shared<LimitOrder>(1, Side::BUY, 25, 150.00));
-    engine.submit(std::make_shared<LimitOrder>(2, Side::BUY, 50, 150.00));
-    engine.submit(std::make_shared<LimitOrder>(3, Side::BUY, 25, 150.00));
-    // 1 LimitOrder - 50 resting bids @ 149.50
-    engine.submit(std::make_shared<LimitOrder>(4, Side::BUY, 50, 149.50));
-    // 2 LimitOrders - 100 resting bids @ 149.00
-    engine.submit(std::make_shared<LimitOrder>(5, Side::BUY, 75, 149.00));
-    engine.submit(std::make_shared<LimitOrder>(6, Side::BUY, 25, 149.00));
-    // 1 LimitOrder - 100 resting bids @ 148.50
-    engine.submit(std::make_shared<LimitOrder>(7, Side::BUY, 100, 148.50));
+    // 1 LimitOrder - 100 resting asks @ 101.00
+    engine.submit(std::make_shared<LimitOrder>(1, Side::SELL, 100, 101.00));
+    // 1 LimitOrder - 100 resting asks @ 102
+    engine.submit(std::make_shared<LimitOrder>(2, Side::SELL, 100, 102.00));
+    // 1 LimitOrder - 100 resting asks @ 103.00
+    engine.submit(std::make_shared<LimitOrder>(3, Side::SELL, 100, 103.00));
 
-    // 1 StopOrder - 50 resting bids @ 149.50
-    engine.submit(std::make_shared<StopOrder>(8, Side::BUY, 50, 149.50));
+    // 1 LimitOrder - 100 resting bids @ 99.00
+    engine.submit(std::make_shared<LimitOrder>(4, Side::BUY, 100 , 99.00));
+
+    // 1 StopOrder - 50 resting bids @ 101.50
+    engine.submit(std::make_shared<StopOrder>(8, Side::BUY, 50, 101.50));
 
     std::cout << "--- Initial Book ---";
     engine.print();
     // book.print();  // should be identical at this step
 
-    std::cout << "\n--- SELL MARKET 101 ---\n";
-    auto trades = engine.submit(std::make_shared<MarketOrder>(9, Side::SELL, 201));
+    std::cout << "\n--- SELL MARKET ---\n";
+    auto trades = engine.submit(std::make_shared<MarketOrder>(9, Side::BUY, 150));
     for (const auto& t : trades)
          std::cout << "  TRADE: maker=" << t.maker_id << " taker=" << t.taker_id
              << " price=$" << t.price << " qty=" << t.quantity << "\n";

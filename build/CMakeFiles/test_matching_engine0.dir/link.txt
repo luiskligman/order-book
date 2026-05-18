@@ -1,1 +1,1 @@
-/usr/bin/g++ -g CMakeFiles/test_matching_engine0.dir/tests/test_matching_engine0.cpp.o CMakeFiles/test_matching_engine0.dir/src/order_book.cpp.o CMakeFiles/test_matching_engine0.dir/src/matching_engine.cpp.o -o test_matching_engine0 
+/usr/bin/g++ -g -fsanitize=address CMakeFiles/test_matching_engine0.dir/tests/test_matching_engine0.cpp.o CMakeFiles/test_matching_engine0.dir/src/order_book.cpp.o CMakeFiles/test_matching_engine0.dir/src/matching_engine.cpp.o -o test_matching_engine0 

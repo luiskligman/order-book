@@ -51,10 +51,12 @@ void MatchingEngine::print() const {
     std::cout << "  BIDS (higest first):\n";
     for (const auto& [price, orders] : book_.bids_) {
         int total_qty = 0;
-        for (const auto& order : orders) 
-            total_qty += remaining_qty_.at(order->id());  // use .at() to maintain const
+        for (const auto& order : orders) {
+            auto it = remaining_qty_.find(order->id());
+            total_qty += (it != remaining_qty_.end()) ? it->second : order->quantity();
             std::cout << "    $" << price << "  qty=" << total_qty
                       << "  (" << orders.size() << " order(s))\n"; 
+        }
     }
 
     std::cout << "  RESTING STOP ORDERS (normally hidden):\n";
@@ -68,8 +70,8 @@ void MatchingEngine::print() const {
                           << "  side=" << (order->side() == Side::BUY ? "BUY" : "SELL") << "\n"; 
             }
         }
-        std::cout << "  BUY STOPS (descending):\n";
-        for (const auto& [price, orders] : sell_stops_) {
+        std::cout << "  BUY STOPS (ascending):\n";
+        for (const auto& [price, orders] : buy_stops_) {
             for (const auto& order : orders) {
                 std::cout << "    $" << order->price() << "  qty=" << order->quantity()
                           << "  side=" << (order->side() == Side::BUY ? "BUY" : "SELL") << "\n"; 
@@ -116,6 +118,9 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
                 book_.order_index_.erase(maker->id());
                 if (queue.empty()) book_.asks_.erase(best_level);  // no more asks in the price level
             }
+            // check for stops with the last executed trading price
+            auto stop_trades = check_stops(trades.back().price);
+            trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
         }
     } else {
         while (remaining > 0 && !book_.bids_.empty()) {
@@ -134,17 +139,16 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
             remaining -= fill_qty;
             remaining_qty_[maker->id()] -= fill_qty;
 
-            // Check if the last fill price triggers any waiting stop orders
-
-            auto stop_trades = check_stops(trades.back().price);
-            trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
-
             if (remaining_qty_[maker->id()] == 0) {
                 queue.pop_front();  // remove best bid from the deque, no more available quantity to offer
                 remaining_qty_.erase(maker->id());
                 book_.order_index_.erase(maker->id());
                 if (queue.empty()) book_.bids_.erase(best_level);
             }
+
+            // check for stops with the last executed trading price
+            auto stop_trades = check_stops(trades.back().price);
+            trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
         }
     }
 
@@ -154,33 +158,47 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming, int& remaining) {
 std::vector<Trade> MatchingEngine::check_stops(double last_price) {
     std::vector<Trade> trades;
 
-    for (auto stop_iter = buy_stops_.begin(); stop_iter != buy_stops_.end(); ) {
-        OrderPtr stop = stop_iter->second.front();
-        double trigger = stop->price();
+    // check if there are no stops
+    if (buy_stops_.empty() && sell_stops_.empty()) { return trades;}
+    
+    // get the price level of the best buy stop order if one exists
+    double best_buy = buy_stops_.empty() ? std::numeric_limits<double>::max() : buy_stops_.begin()->first;
 
-        // BUY stop triggers when price rises to or above the trigger
-        // SELL stop triggers when price falls to or below the trigger
-        bool triggered = (stop->side() == Side::BUY && last_price >= trigger) ||
-                         (stop->side() == Side::SELL && last_price <= trigger);
+    // get the price level of the best sell stop order if one exists
+    double best_sell = sell_stops_.empty() ? std::numeric_limits<double>::lowest() : sell_stops_.begin()->first;
 
-        // Convert the triggered stop into a market order and match it immediately
-        // We cannot mutate the stop order (fields are const), therefore, we must create a new
-        // MarketOrder with the same ID so fills can be traced back to the original stop
-        if (triggered) {
-            // Orders are immutable so we can't convert in place.
-            // Create a new market order carrying the same ID for traceability
-            auto market = std::make_shared<MarketOrder>(
-                stop->id(), stop->side(), stop->quantity()
-            );
+    // invalid conditions for stops to be changed into market orders
+    if (best_buy > last_price && best_sell < last_price) { return trades; }
 
-            int remaining = market->quantity();
-            auto stop_trades = match(market, remaining);
-            trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
-            //stop_iter = pending_stops_.erase(stop_iter);
-        } else {
-            ++stop_iter;
-        }
+    // collect and erase all triggered buy stops
+    std::vector<OrderPtr> to_trigger;
+    for (auto stop_iter = buy_stops_.begin(); stop_iter != buy_stops_.end() && stop_iter->first <= last_price; ) {
+        for (const auto& stop : stop_iter->second)
+            to_trigger.push_back(stop);
+        stop_iter = buy_stops_.erase(stop_iter);
     }
+
+    // now match the stop orders that became market orders
+    for (const auto& stop : to_trigger) {
+        auto market = std::make_shared<MarketOrder>(stop->id(), stop->side(), stop->quantity());
+        int remaining = market->quantity();
+        auto stop_trades = match(market, remaining);
+        trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
+    }
+
+    // // check buy stops and convert valid orders to market
+    // for (auto stop_iter = buy_stops_.begin(); stop_iter != buy_stops_.end() && stop_iter->first <= last_price; ) {
+    //     for (const auto& stop : stop_iter->second) {
+    //         auto market = std::make_shared<MarketOrder>(stop->id(), stop->side(), stop->quantity());
+    //         int remaining = market->quantity();
+    //         auto stop_trades = match(market, remaining);
+    //         trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
+    //     }
+
+    //     // erase returns the next valid iterator, increments
+    //     stop_iter = buy_stops_.erase(stop_iter);
+
+    // }
 
     return trades;
 }
