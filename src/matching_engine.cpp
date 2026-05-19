@@ -186,20 +186,6 @@ std::vector<Trade> MatchingEngine::check_stops(double last_price) {
         trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
     }
 
-    // // check buy stops and convert valid orders to market
-    // for (auto stop_iter = buy_stops_.begin(); stop_iter != buy_stops_.end() && stop_iter->first <= last_price; ) {
-    //     for (const auto& stop : stop_iter->second) {
-    //         auto market = std::make_shared<MarketOrder>(stop->id(), stop->side(), stop->quantity());
-    //         int remaining = market->quantity();
-    //         auto stop_trades = match(market, remaining);
-    //         trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
-    //     }
-
-    //     // erase returns the next valid iterator, increments
-    //     stop_iter = buy_stops_.erase(stop_iter);
-
-    // }
-
     return trades;
 }
 

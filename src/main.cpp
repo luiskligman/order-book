@@ -39,6 +39,5 @@ int main() {
     std::cout << "\n --- Final Book ---\n";
     book.print();
 
-
     return 0;
 }
