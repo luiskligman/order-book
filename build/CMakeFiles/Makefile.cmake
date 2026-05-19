@@ -53,4 +53,5 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/order_book.dir/DependInfo.cmake"
   "CMakeFiles/test_matching_engine0.dir/DependInfo.cmake"
   "CMakeFiles/test_matching_engine1.dir/DependInfo.cmake"
+  "CMakeFiles/test_matching_engine2.dir/DependInfo.cmake"
   )

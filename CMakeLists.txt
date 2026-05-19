@@ -25,6 +25,7 @@ enable_testing()
 set(TESTS
     test_matching_engine0
     test_matching_engine1
+    test_matching_engine2
 )
 
 foreach(TEST ${TESTS})

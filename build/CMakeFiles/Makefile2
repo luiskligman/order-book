@@ -66,6 +66,7 @@ CMAKE_BINARY_DIR = /home/luis/Desktop/order-book/build
 all: CMakeFiles/order_book.dir/all
 all: CMakeFiles/test_matching_engine0.dir/all
 all: CMakeFiles/test_matching_engine1.dir/all
+all: CMakeFiles/test_matching_engine2.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -76,6 +77,7 @@ preinstall:
 clean: CMakeFiles/order_book.dir/clean
 clean: CMakeFiles/test_matching_engine0.dir/clean
 clean: CMakeFiles/test_matching_engine1.dir/clean
+clean: CMakeFiles/test_matching_engine2.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -155,6 +157,32 @@ test_matching_engine1: CMakeFiles/test_matching_engine1.dir/rule
 CMakeFiles/test_matching_engine1.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/clean
 .PHONY : CMakeFiles/test_matching_engine1.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/test_matching_engine2.dir
+
+# All Build rule for target.
+CMakeFiles/test_matching_engine2.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/luis/Desktop/order-book/build/CMakeFiles --progress-num=14,15,16,17 "Built target test_matching_engine2"
+.PHONY : CMakeFiles/test_matching_engine2.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/test_matching_engine2.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/luis/Desktop/order-book/build/CMakeFiles 4
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/test_matching_engine2.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/luis/Desktop/order-book/build/CMakeFiles 0
+.PHONY : CMakeFiles/test_matching_engine2.dir/rule
+
+# Convenience name for target.
+test_matching_engine2: CMakeFiles/test_matching_engine2.dir/rule
+.PHONY : test_matching_engine2
+
+# clean rule for target.
+CMakeFiles/test_matching_engine2.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/clean
+.PHONY : CMakeFiles/test_matching_engine2.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

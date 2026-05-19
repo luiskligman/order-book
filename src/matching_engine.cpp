@@ -170,15 +170,23 @@ std::vector<Trade> MatchingEngine::check_stops(double last_price) {
     // invalid conditions for stops to be changed into market orders
     if (best_buy > last_price && best_sell < last_price) { return trades; }
 
-    // collect and erase all triggered buy stops
     std::vector<OrderPtr> to_trigger;
+
+    // add buy market stops to to_trigger vector
     for (auto stop_iter = buy_stops_.begin(); stop_iter != buy_stops_.end() && stop_iter->first <= last_price; ) {
         for (const auto& stop : stop_iter->second)
             to_trigger.push_back(stop);
         stop_iter = buy_stops_.erase(stop_iter);
     }
 
-    // now match the stop orders that became market orders
+    // add sell market stops to to_trigger vector
+    for (auto stop_iter = sell_stops_.begin(); stop_iter != sell_stops_.end() && stop_iter->first >= last_price; ) {
+        for (const auto& stop : stop_iter->second)
+            to_trigger.push_back(stop);
+        stop_iter = sell_stops_.erase(stop_iter);
+    }
+
+    // now match the stop orders as market orders in the engine
     for (const auto& stop : to_trigger) {
         auto market = std::make_shared<MarketOrder>(stop->id(), stop->side(), stop->quantity());
         int remaining = market->quantity();

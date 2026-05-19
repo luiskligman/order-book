@@ -165,6 +165,19 @@ test_matching_engine1/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/build
 .PHONY : test_matching_engine1/fast
 
+#=============================================================================
+# Target rules for targets named test_matching_engine2
+
+# Build rule for target.
+test_matching_engine2: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_matching_engine2
+.PHONY : test_matching_engine2
+
+# fast build rule for target.
+test_matching_engine2/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/build
+.PHONY : test_matching_engine2/fast
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -197,6 +210,7 @@ src/matching_engine.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/order_book.dir/build.make CMakeFiles/order_book.dir/src/matching_engine.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine0.dir/build.make CMakeFiles/test_matching_engine0.dir/src/matching_engine.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/src/matching_engine.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/src/matching_engine.cpp.o
 .PHONY : src/matching_engine.cpp.o
 
 src/matching_engine.i: src/matching_engine.cpp.i
@@ -207,6 +221,7 @@ src/matching_engine.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/order_book.dir/build.make CMakeFiles/order_book.dir/src/matching_engine.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine0.dir/build.make CMakeFiles/test_matching_engine0.dir/src/matching_engine.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/src/matching_engine.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/src/matching_engine.cpp.i
 .PHONY : src/matching_engine.cpp.i
 
 src/matching_engine.s: src/matching_engine.cpp.s
@@ -217,6 +232,7 @@ src/matching_engine.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/order_book.dir/build.make CMakeFiles/order_book.dir/src/matching_engine.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine0.dir/build.make CMakeFiles/test_matching_engine0.dir/src/matching_engine.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/src/matching_engine.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/src/matching_engine.cpp.s
 .PHONY : src/matching_engine.cpp.s
 
 src/order_book.o: src/order_book.cpp.o
@@ -227,6 +243,7 @@ src/order_book.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/order_book.dir/build.make CMakeFiles/order_book.dir/src/order_book.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine0.dir/build.make CMakeFiles/test_matching_engine0.dir/src/order_book.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/src/order_book.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/src/order_book.cpp.o
 .PHONY : src/order_book.cpp.o
 
 src/order_book.i: src/order_book.cpp.i
@@ -237,6 +254,7 @@ src/order_book.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/order_book.dir/build.make CMakeFiles/order_book.dir/src/order_book.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine0.dir/build.make CMakeFiles/test_matching_engine0.dir/src/order_book.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/src/order_book.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/src/order_book.cpp.i
 .PHONY : src/order_book.cpp.i
 
 src/order_book.s: src/order_book.cpp.s
@@ -247,6 +265,7 @@ src/order_book.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/order_book.dir/build.make CMakeFiles/order_book.dir/src/order_book.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine0.dir/build.make CMakeFiles/test_matching_engine0.dir/src/order_book.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/src/order_book.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/src/order_book.cpp.s
 .PHONY : src/order_book.cpp.s
 
 src/order_queue.o: src/order_queue.cpp.o
@@ -321,6 +340,30 @@ tests/test_matching_engine1.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine1.dir/build.make CMakeFiles/test_matching_engine1.dir/tests/test_matching_engine1.cpp.s
 .PHONY : tests/test_matching_engine1.cpp.s
 
+tests/test_matching_engine2.o: tests/test_matching_engine2.cpp.o
+.PHONY : tests/test_matching_engine2.o
+
+# target to build an object file
+tests/test_matching_engine2.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/tests/test_matching_engine2.cpp.o
+.PHONY : tests/test_matching_engine2.cpp.o
+
+tests/test_matching_engine2.i: tests/test_matching_engine2.cpp.i
+.PHONY : tests/test_matching_engine2.i
+
+# target to preprocess a source file
+tests/test_matching_engine2.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/tests/test_matching_engine2.cpp.i
+.PHONY : tests/test_matching_engine2.cpp.i
+
+tests/test_matching_engine2.s: tests/test_matching_engine2.cpp.s
+.PHONY : tests/test_matching_engine2.s
+
+# target to generate assembly for a file
+tests/test_matching_engine2.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_matching_engine2.dir/build.make CMakeFiles/test_matching_engine2.dir/tests/test_matching_engine2.cpp.s
+.PHONY : tests/test_matching_engine2.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -333,6 +376,7 @@ help:
 	@echo "... order_book"
 	@echo "... test_matching_engine0"
 	@echo "... test_matching_engine1"
+	@echo "... test_matching_engine2"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
@@ -351,6 +395,9 @@ help:
 	@echo "... tests/test_matching_engine1.o"
 	@echo "... tests/test_matching_engine1.i"
 	@echo "... tests/test_matching_engine1.s"
+	@echo "... tests/test_matching_engine2.o"
+	@echo "... tests/test_matching_engine2.i"
+	@echo "... tests/test_matching_engine2.s"
 .PHONY : help
 
 

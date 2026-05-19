@@ -4,14 +4,13 @@
 #include <iomanip>
 
 /*
-    In this test, I am skewing there to be many orders on one side of the book, testing stop orders
-    to see if they will properly activate if one market order sweeps through multiple price levels.
-
-    My current analysis of the code leads me to believe that this is a critical error, but this test will
-    prove if I am right or wrong. If I am right, I can use this to check my fixes.
+    This test is used to ensure that buy market stop orders are working properly. The
+    code is currently set to show resting stop orders, something a normal exchange would not do.
 */
 
 int main() {
+    std::cout << "\n--- TESTING BUY MARKET STOP ORDER ---\n";
+
     OrderBook book;
     MatchingEngine engine(book);
 
@@ -28,17 +27,17 @@ int main() {
     engine.submit(std::make_shared<LimitOrder>(4, Side::BUY, 100 , 99.00));
 
     // 1 StopOrder - 50 resting bids @ 101.50
-    engine.submit(std::make_shared<StopOrder>(8, Side::BUY, 50, 101.50));
+    engine.submit(std::make_shared<StopOrder>(5, Side::BUY, 50, 101.50));
 
     std::cout << "--- Initial Book ---";
     engine.print();
     // book.print();  // should be identical at this step
 
-    std::cout << "\n--- SELL MARKET ---\n";
-    auto trades = engine.submit(std::make_shared<MarketOrder>(9, Side::BUY, 150));
+    std::cout << "\n--- BUY MARKET ---\n";
+    auto trades = engine.submit(std::make_shared<MarketOrder>(6, Side::BUY, 150));
     for (const auto& t : trades)
-         std::cout << "  TRADE: maker=" << t.maker_id << " taker=" << t.taker_id
-             << " price=$" << t.price << " qty=" << t.quantity << "\n";
+        std::cout << "  TRADE: maker=" << t.maker_id << " taker=" << t.taker_id
+            << " price=$" << t.price << " qty=" << t.quantity << "\n";
 
     engine.print();
 
