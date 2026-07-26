@@ -8,6 +8,8 @@
 
 // OrderId is a type alias for unsigned 64 int
 using OrderID = uint64_t;
+using Price = int64_t;
+using Qty = int64_t;
 
 // Side represents which direction an order is
 enum class Side { BUY, SELL };
@@ -20,12 +22,10 @@ inline std::ostream& operator<<(std::ostream& os, Side s) {
   return os << "unknown";
 }
 
-// Order<PriceT, QtyT> is the abstract base for all order types
-template<typename PriceT, typename QtyT>
 class Order {
   public:
     
-    Order(OrderID id, Side side, QtyT quantity, PriceT price, PriceT stop_price)
+    Order(OrderID id, Side side, Qty quantity, Price price, Price stop_price)
       : id_(id)
       , side_(side)
       , original_qty_(quantity)
@@ -41,13 +41,13 @@ class Order {
 
     OrderID id() const { return id_; }
     Side side() const { return side_; }
-    QtyT original_qty() const { return original_qty_; }
-    QtyT quantity() const { return quantity_; }
-    PriceT price() const { return price_; }
-    PriceT stop_price() const { return stop_price_; }
+    Qty original_qty() const { return original_qty_; }
+    Qty quantity() const { return quantity_; }
+    Price price() const { return price_; }
+    Price stop_price() const { return stop_price_; }
     auto timestamp() const { return timestamp_; }  // might be able to just use auto
 
-    void fill(QtyT fill_qty) {
+    void fill(Qty fill_qty) {
       if (quantity_ < fill_qty) {
           throw std::runtime_error("fill quantity exceeds available quanity");
           return;
@@ -83,10 +83,10 @@ class Order {
   private: 
     const OrderID id_;
     const Side side_;
-    const QtyT original_qty_;
-    QtyT quantity_;
-    const PriceT price_;
-    const PriceT stop_price_;
+    const Qty original_qty_;
+    Qty quantity_;
+    const Price price_;
+    const Price stop_price_;
     const std::chrono::time_point<std::chrono::steady_clock> timestamp_;
 };
 
@@ -95,10 +95,10 @@ class Order {
 // Matches only at the limit price or better
 // is_marketable() returns true because we allow it to attempt a match
 // the matching engine will enfore the price constraint
-class LimitOrder : public Order<double, int> {
+class LimitOrder : public Order {
   public: 
     LimitOrder(OrderID id, Side side, int quantity, double price)
-      : Order<double, int>(id, side, quantity, price, 0.0)
+      : Order(id, side, quantity, price, 0.0)
       {}
 
       bool is_marketable() const override { return true; }
@@ -108,10 +108,10 @@ class LimitOrder : public Order<double, int> {
 // MarketOrder
 // Matches at whatever price is available
 // Price is stored as 0.0 since it is irrelevant for market orders
-class MarketOrder : public Order<double, int> {
+class MarketOrder : public Order {
   public:
     MarketOrder(OrderID id, Side side, int quantity)
-    : Order<double, int>(id, side, quantity, 0.0, 0.0)
+    : Order(id, side, quantity, 0.0, 0.0)
     {}
 
     bool is_marketable() const override { return true; }
@@ -121,10 +121,10 @@ class MarketOrder : public Order<double, int> {
 // StopOrder
 // Sits dormant until the market price crosses the trigger price
 // Once crossed it then becomes a market order
-class StopOrder : public Order<double, int> {
+class StopOrder : public Order {
   public:
     StopOrder(OrderID id, Side side, int quantity, double stop_price)
-    : Order<double, int>(id, side, quantity, 0.0, stop_price)
+    : Order(id, side, quantity, 0.0, stop_price)
     {}
 
     bool is_marketable() const override { return false; }
@@ -134,10 +134,10 @@ class StopOrder : public Order<double, int> {
 // StopLimitOrder
 // Sits dormant until the market price crosses the trigger price
 // Then it becomes a limit order
-class StopLimitOrder : public Order<double, int> {
+class StopLimitOrder : public Order {
   public:
     StopLimitOrder(OrderID id, Side side, int quantity, double price, double stop_price)
-    : Order<double, int>(id, side, quantity, price, stop_price)
+    : Order(id, side, quantity, price, stop_price)
     {}
 
     bool is_marketable() const override { return false; }

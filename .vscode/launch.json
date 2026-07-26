@@ -1,0 +1,18 @@
+  {                                                                                                                                                                                                                                                           
+      "version": "0.2.0",                                                                                                                                                                                                                                   
+      "configurations": [                                                                                                                                                                                                                                                 
+          {
+              "name": "Debug order_book",                                                                                                                                                                                                                     
+              "type": "cppdbg",                                                                                                                                                                                                                             
+              "request": "launch",
+              "program": "${workspaceFolder}/build/order_book",
+              "args": [],                                                                                                                                                                                                                                     
+              "stopAtEntry": false,
+              "cwd": "${workspaceFolder}",                                                                                                                                                                                                                    
+              "environment": [],                                                                                                                                                                                                                            
+              "externalConsole": false,
+              "MIMode": "gdb",
+              "preLaunchTask": "CMake Build"                                                                                                                                                                                                                  
+          }
+      ]                                                                                                                                                                                                                                                       
+  }    
