@@ -7,11 +7,14 @@
 #include <map>
 #include <deque>
 #include <functional>
+#include <unordered_map>
 
 
 using OrderPtr = std::shared_ptr<Order>;
 
 class OrderBook {
+
+  friend class MatchingEngine;
 
   public: 
     // Add an order to the appropriate side of the book
@@ -19,6 +22,10 @@ class OrderBook {
 
     // Remove an order by ID. Returns true if found and removed
     bool cancel_order(OrderID id);
+
+    // Remove an order if quantity is zero
+    // Return true is removed, false if not
+    bool remove_if_filled(OrderPtr order);
 
     // Returns the best bid price (highest buy), if any bids exist
     std::optional<Price> best_bid() const; 

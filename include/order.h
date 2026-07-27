@@ -39,6 +39,14 @@ class Order {
     // Withjout, deleting a LimitOrder* through an Order* would be undefined behavior
     virtual ~Order() = default;
 
+    // RULE OF 5
+    // Manually delete copy ctor, copy assignment, move ctor, move assignment
+    // Makes compiler errors instead of undefined behavior
+    Order(const Order&) = delete;  // copy constructor
+    Order& operator=(const Order&) = delete;  // copy assignment
+    Order(Order&&) = delete;  // move constructor
+    Order& operator=(Order&&) = delete;  // move assignment
+
     OrderID id() const { return id_; }
     Side side() const { return side_; }
     Qty original_qty() const { return original_qty_; }
@@ -72,7 +80,6 @@ class Order {
           << "   Timestamp: " << timestamp().time_since_epoch().count();
       return oss.str();
     }
-
 
     // pure virtual methods: every concrete order type must answer these
     // is_marketable(): can this order match immediately against the book

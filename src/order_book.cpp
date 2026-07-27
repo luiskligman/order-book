@@ -48,10 +48,10 @@ bool OrderBook::cancel_order(OrderID id) {
           if ((*order_iter)->id() == id) {
             queue.erase(order_iter);
             break;
+          }
         }
         if (queue.empty()) {
           asks_.erase(price_level);
-        }
       }
     }
   }
@@ -60,6 +60,16 @@ bool OrderBook::cancel_order(OrderID id) {
   return true;
 
 }
+
+bool OrderBook::remove_if_filled(OrderPtr order) {
+  // Order with quantity should not be removed
+  if (order->quantity() != 0) {
+    return false;
+  }
+
+  return cancel_order(order->id());
+}
+
 
 std::optional<Price> OrderBook::best_bid() const {
   if (bids_.empty()) return std::nullopt;

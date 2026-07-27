@@ -9,5 +9,7 @@ include_directories(include)
 add_executable(order_book
   src/main.cpp
   src/order_book.cpp
+  src/matching_engine.cpp
+
 )
 
