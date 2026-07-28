@@ -12,8 +12,8 @@ MatchingEngine::MatchingEngine(OrderBook& book) : book_(book) {}
 std::vector<Trade> MatchingEngine::submit(OrderPtr incoming) {
   if (!incoming->is_marketable()) {
     incoming->side() == Side::BUY ?
-      buy_stops_[incoming->price()].push_back(incoming) :
-      sell_stops_[incoming->price()].push_back(incoming);
+      buy_stops_[incoming->stop_price()].push_back(incoming) :
+      sell_stops_[incoming->stop_price()].push_back(incoming);
     return {};  // no trades take place when submitting a non marketable order
   }
 
@@ -149,10 +149,31 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
 
   // add buy market stops to to_trigger vector
   for (auto stop_iter = buy_stops_.begin(); stop_iter != buy_stops_.end() && stop_iter->first <= last_price; ) {
-    
+    for (const auto& stop : stop_iter->second) {
+      to_trigger.push_back(stop);
+    }
+    stop_iter = buy_stops_.erase(stop_iter);
   }
 
+  // add sell market stops to to_trigger vector
+  for (auto stop_iter = sell_stops_.begin(); stop_iter != sell_stops_.end() && stop_iter->first >= last_price; ) {
+    for (const auto& stop : stop_iter->second) {
+      to_trigger.push_back(stop);
+    }
+    stop_iter = sell_stops_.erase(stop_iter);
+  }
 
+  for (const auto& stop : to_trigger) {
+    auto market = std::make_shared<MarketOrder>(stop->id(), stop->side(), stop->quantity());
+    
+    auto stop_trades = match(market);
 
+    for (const auto& trade : stop_trades) {
+      trades.push_back(trade);
+    }
+  }
+
+  std::cerr << "TEST\n";
   return trades;
+
 };

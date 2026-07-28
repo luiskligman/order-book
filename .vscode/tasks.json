@@ -2,24 +2,24 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "cppbuild",
-			"label": "C/C++: g++ build active file",
-			"command": "/usr/bin/g++",
-			"args": [
-				"-fdiagnostics-color=always",
-				"-g",
-				"${file}",
-				"-o",
-				"${fileDirname}/${fileBasenameNoExtension}"
-			],
+			// Rebuilds via the existing CMake-generated Makefile in build/, so the
+			// debugger always launches against a fresh binary that matches your
+			// current source instead of whatever was last built by hand.
+			// Label must match launch.json's "preLaunchTask" exactly - that string
+			// match is how VS Code found (or, before this fix, failed to find) it.
+			"label": "CMake Build",
+			"type": "shell",
+			"command": "cmake --build build",
 			"options": {
-				"cwd": "${fileDirname}"
+				"cwd": "${workspaceFolder}"
 			},
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": "build",
-			"detail": "compiler: /usr/bin/g++"
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			// Lets VS Code parse g++/gcc errors from the build output into the
+			// Problems panel, same as the old tasks did.
+			"problemMatcher": ["$gcc"]
 		}
 	]
 }

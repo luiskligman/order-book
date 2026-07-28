@@ -1,18 +1,52 @@
-  {                                                                                                                                                                                                                                                           
-      "version": "0.2.0",                                                                                                                                                                                                                                   
-      "configurations": [                                                                                                                                                                                                                                                 
-          {
-              "name": "Debug order_book",                                                                                                                                                                                                                     
-              "type": "cppdbg",                                                                                                                                                                                                                             
-              "request": "launch",
-              "program": "${workspaceFolder}/build/order_book",
-              "args": [],                                                                                                                                                                                                                                     
-              "stopAtEntry": false,
-              "cwd": "${workspaceFolder}",                                                                                                                                                                                                                    
-              "environment": [],                                                                                                                                                                                                                            
-              "externalConsole": false,
-              "MIMode": "gdb",
-              "preLaunchTask": "CMake Build"                                                                                                                                                                                                                  
-          }
-      ]                                                                                                                                                                                                                                                       
-  }    
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug order_book",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/order_book",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            // Integrated Debug Console instead of a separate terminal window.
+            // Tested both true/false here - the GDB "Failed to set controlling
+            // terminal: Operation not permitted" warning shows up either way on
+            // this machine, so it isn't actually controlled by this setting.
+            // It's a known, largely cosmetic gdb/cpptools quirk on Linux: GDB
+            // fails to claim the terminal for signal delivery, but breakpoints,
+            // stepping, and variable inspection still work. If those stop
+            // working too, that's a separate, real problem from this warning.
+            "externalConsole": false,
+            "MIMode": "gdb",
+            // The actual freeze: on first DSO load, gdb asks "Enable debuginfod
+            // for this session? (y or [n])" and waits for an answer. cpptools
+            // talks to gdb over the MI protocol and has no way to answer that
+            // raw console prompt, so gdb just hangs forever - this is what "I
+            // cannot do anything" actually was, not the controlling-terminal
+            // warning. Disabling debuginfod means gdb never asks.
+            "setupCommands": [
+                {
+                    "description": "Disable debuginfod (was hanging MI sessions waiting on an unanswerable y/n prompt)",
+                    "text": "set debuginfod enabled off",
+                    "ignoreFailures": true
+                }
+            ],
+            // Temporary again: need to confirm whether setupCommands above is
+            // actually landing before gdb hits the DSO/debuginfod check, or if
+            // it's still hanging on the same prompt despite the setting. Remove
+            // once confirmed.
+            "logging": {
+                "engineLogging": true,
+                "trace": true
+            },
+            // Must exactly match a task label in tasks.json. This was the actual
+            // failure before ("could not find the task 'CMake Build'") - with no
+            // task by that name, the build step silently never ran, so "Debug
+            // anyway" was launching whatever stale binary was already sitting in
+            // build/order_book rather than one matching your current source.
+            "preLaunchTask": "CMake Build"
+        }
+    ]
+}
