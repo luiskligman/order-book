@@ -1,4 +1,4 @@
-# include <../include/order_book.h>
+# include "../include/order_book.h"
 
 #include <iostream>
 #include <iomanip>
@@ -126,14 +126,15 @@ std::string OrderBook::print() const {
   auto row = [&](const level& l, const char* color) {
     os << "  " << color
        << std::setw(10) << l.price
-       << std::setw(8) << l.qty
-       << std::setw(5) << l.orders
-       << DIM << std::setw(9) << l.cumulative << RST 
-       << "  " << color << bar(l.qty) << RST << "\n";
+       << std::setw(13) << l.qty
+       << std::setw(8) << l.orders
+       << DIM << std::setw(15) << l.cumulative << RST 
+       << "  " << color //<< bar(l.qty) 
+       << RST << "\n";
   };
 
   os << "\n" << BOLD << "  ORDER BOOK" << RST << "\n";
-  os << DIM << "       PRICE     QTY  ORD      CUM  DEPTH\n" << RST;
+  os << DIM << "       PRICE       QTY      ORD           CUM     DEPTH\n" << RST;
   os << DIM << "  " << std::string(52, '-') << RST << "\n";
  
   // Asks - worst price at top, best just above the spread line

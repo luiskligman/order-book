@@ -173,7 +173,6 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
     }
   }
 
-  std::cerr << "TEST\n";
   return trades;
 
 };

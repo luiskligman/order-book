@@ -31,16 +31,16 @@ int main() {
   engine.submit(std::make_shared<LimitOrder>(108, Side::BUY, 100, 97));
   engine.submit(std::make_shared<LimitOrder>(109, Side::BUY, 300, 96));
 
-  engine.submit(std::make_shared<StopOrder>(98, Side::BUY, 100, 103));
-  //engine.submit(std::make_shared<StopOrder>(99, Side::SELL, 100, 99));
+  // engine.submit(std::make_shared<StopOrder>(98, Side::BUY, 100, 103));
+  engine.submit(std::make_shared<StopOrder>(99, Side::SELL, 100, 98));
 
-  std::cout << book.print();
-
-  engine.submit(std::make_shared<MarketOrder>(110, Side::BUY, 301));
-  std::cout << book.print();
-
-  // engine.submit(std::make_shared<MarketOrder>(111, Side::SELL, 201));
   // std::cout << book.print();
+
+  // engine.submit(std::make_shared<MarketOrder>(110, Side::BUY, 301));
+  std::cout << book.print();
+
+  engine.submit(std::make_shared<MarketOrder>(111, Side::SELL, 201));
+  std::cout << book.print();
 
 
 

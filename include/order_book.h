@@ -8,6 +8,7 @@
 #include <deque>
 #include <functional>
 #include <unordered_map>
+#include <sstream>
 
 
 using OrderPtr = std::shared_ptr<Order>;
