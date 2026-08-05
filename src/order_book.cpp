@@ -2,16 +2,24 @@
 
 #include <iostream>
 #include <iomanip>
+#include <list>
 
 void OrderBook::add_order(OrderPtr order) {
+
+  std::list<OrderPtr>::iterator iter; 
 
   // Route to the correct side
   if (order->side() == Side::BUY) {
     bids_[order->price()].push_back(order);
+    iter = std::prev(bids_[order->price()].end());
   } else {
     asks_[order->price()].push_back(order);
+    iter = std::prev(asks_[order->price()].end());
   }
-  order_index_[order->id()] = order;
+
+  OrderLocator locator {order, iter};
+
+  order_index_[order->id()] = locator;
 }
 
 bool OrderBook::cancel_order(OrderID id) {
@@ -21,7 +29,7 @@ bool OrderBook::cancel_order(OrderID id) {
 
   // index_entry->first is the OrderID, index_entry->second is a 
   // pointer to the Order with OrderID
-  OrderPtr order = index_entry->second;
+  OrderPtr order = index_entry->second.order;
 
   // Remove from the correct price level on the correct side
   if (order->side() == Side::BUY) {
@@ -29,27 +37,32 @@ bool OrderBook::cancel_order(OrderID id) {
     if (price_level != bids_.end()) {
       auto& queue = price_level->second;  // store bids_ deque as queue
       // use order_iter to iterate through orders in the deque
-      for (auto order_iter = queue.begin(); order_iter != queue.end(); ++order_iter) {
-        if ((*order_iter)->id() == id) { 
-          queue.erase(order_iter); 
-          break;
-        }
-      }
+      // for (auto order_iter = queue.begin(); order_iter != queue.end(); ++order_iter) {
+      //   if ((*order_iter)->id() == id) { 
+      //     queue.erase(order_iter); 
+      //     break;
+      //   }
+      // }
+      queue.erase(index_entry->second.iter);
+      
       if (queue.empty()) {
           bids_.erase(price_level);
         }
+      
     } 
   } else {
       auto price_level = asks_.find(order->price());
       if (price_level != asks_.end()) {
         auto& queue = price_level->second;  // store asks_ deque as queue
         // use order_iter to iterate through orders in the deque
-        for (auto order_iter = queue.begin(); order_iter != queue.end(); ++order_iter) {
-          if ((*order_iter)->id() == id) {
-            queue.erase(order_iter);
-            break;
-          }
-        }
+        // for (auto order_iter = queue.begin(); order_iter != queue.end(); ++order_iter) {
+        //   if ((*order_iter)->id() == id) {
+        //     queue.erase(order_iter);
+        //     break;
+        //   }
+        // }
+        queue.erase(index_entry->second.iter);
+
         if (queue.empty()) {
           asks_.erase(price_level);
       }

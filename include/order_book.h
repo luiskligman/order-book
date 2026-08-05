@@ -5,7 +5,8 @@
 #include <memory>
 #include <optional>
 #include <map>
-#include <deque>
+// #include <deque>
+#include <list>
 #include <functional>
 #include <unordered_map>
 #include <sstream>
@@ -38,15 +39,21 @@ class OrderBook {
     std::string print() const;
 
   private:
+
+    struct OrderLocator {
+      OrderPtr order;
+      std::list<OrderPtr>::iterator iter;
+    };
+
     // Bids - highest price first, use std::greater<double> to reverse the default
     // ascending order so bids_.cbegin() is always the best (highest) bid
-    std::map<Price, std::deque<OrderPtr>, std::greater<Price>> bids_;
+    std::map<Price, std::list<OrderPtr>, std::greater<Price>> bids_;
 
     // Asks - lowest price first (default order)
     // asks_.cbegin() is always the best (lowest) ask
-    std::map<Price, std::deque<OrderPtr>> asks_;
+    std::map<Price, std::list<OrderPtr>> asks_;
 
     // Flat index - OrderID -> pointer into the book
-    std::unordered_map<OrderID, OrderPtr> order_index_;
+    std::unordered_map<OrderID, OrderLocator> order_index_;
 
 };

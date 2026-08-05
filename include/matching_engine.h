@@ -3,6 +3,8 @@
 #include "order_book.h"
 #include "trade.h"
 
+#include <deque>
+
 
 class MatchingEngine {
   public:
