@@ -19,44 +19,24 @@ constexpr Price starting_price { 100 };
   efficiency of this application.
 */
 
-class Benchmark {
-  public:
+/*
+  Initial Averages: Cancel Middle: .364696 +- .005    Cancel Last: .260171 +- .005
+                                  Longer due to shifting of subsequent elements
+  
+*/
 
-    // time taken to populate the book
-    std::chrono::duration<double, std::milli> populate;
-
-    std::string print() const {
-
-      std::ostringstream os;
-      
-      os << "  Time taken to populate the book: " << populate.count();
-
-      return os.str();
-    }
-
-
+struct Benchmark {
+    std::chrono::duration<double, std::milli> cancel_middle_order;
+    std::chrono::duration<double, std::milli> cancel_last_order;
 };
 
-Benchmark test() {
-  Benchmark timing;  // create an empty benchmark
 
-  OrderBook book;
-  MatchingEngine engine(book);
-
-  int64_t uid { 1 };
-
-  const char* RED = "\033[31m";
-  const char* GREEN = "\033[32m";
-  const char* BLUE = "\033[34m";
-  const char* DIM = "\033[90m";
-  const char* BOLD = "\033[1m";
-  const char* RST = "\033[0m";
+std::chrono::duration<double, std::milli> populate_book(MatchingEngine& engine, int64_t& uid) {
+  Price ask_price { starting_price };
+  Price bid_price { starting_price };
 
   auto start = std::chrono::steady_clock::now();
 
-  // Generate limit orders
-  Price ask_price { starting_price };
-  Price bid_price { starting_price };
   for (int level = 0; level < price_levels; ++level) {
 
     ask_price += 1;
@@ -69,17 +49,37 @@ Benchmark test() {
       uid += 2;
 
     }
-
   }
 
   auto end = std::chrono::steady_clock::now();
-  std::chrono::duration<double, std::milli> elapsed_ms = end - start;
-  timing.populate = elapsed_ms;
-  // std::cout << elapsed_ms.count() << std::endl;
 
-
-  return timing;
+  return end - start;
 }
+
+std::chrono::duration<double, std::milli> time_cancel_middle() {
+  OrderBook book;
+  MatchingEngine engine(book);
+  int64_t uid { 1 } ;
+  populate_book(engine, uid);
+
+  auto start = std::chrono::steady_clock::now();
+  book.cancel_order(num_orders);
+  auto end = std::chrono::steady_clock::now();
+  return end - start;
+}
+
+std::chrono::duration<double, std::milli> time_cancel_last() {
+  OrderBook book;
+  MatchingEngine engine(book);
+  int64_t uid { 1 } ;
+  populate_book(engine, uid);
+
+  auto start = std::chrono::steady_clock::now();
+  book.cancel_order(num_orders * 2);
+  auto end = std::chrono::steady_clock::now();
+  return end - start;
+}
+
 
 int main() {
 
@@ -92,23 +92,25 @@ int main() {
 
   std::vector<Benchmark> tests {};
 
-  tests.push_back(test());
-  tests.push_back(test());
-  tests.push_back(test());
-  tests.push_back(test());
-  tests.push_back(test());
+  for (int i = 0; i < 30; ++i) {
+    Benchmark b {};
+    b.cancel_middle_order = time_cancel_middle();
+    b.cancel_last_order = time_cancel_last();
+    tests.push_back(b);
+  }
 
-  auto populate_sum = 0.0;
+  auto cancel_middle_sum { 0.0 };
+  auto cancel_last_sum { 0.0 };
   for (const auto& test : tests) {
-    populate_sum += test.populate.count();
-    std::cout << test.print() << std::endl;
-    
+    cancel_middle_sum += test.cancel_middle_order.count();
+    cancel_last_sum += test.cancel_last_order.count();
   }
 
   std::cout << "\n";
 
   std::cout << "AVERAGES" << std::endl;
-  std::cout << "  populate avg: " << populate_sum / double(size(tests)) << std::endl;
+  std::cout << "  cancel middle avg: " << cancel_middle_sum / double(size(tests)) << std::endl;
+  std::cout << "  cancel last avg: " << cancel_last_sum / double(size(tests)) << std::endl;
 
   return 1;
 
