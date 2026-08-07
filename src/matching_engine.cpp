@@ -172,7 +172,7 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
     } else if (stop->type_str() == "STOP LIMIT ORDER") {
       market = std::make_shared<LimitOrder>(stop->id(), stop->side(), stop->quantity(), stop->price());
     } else {
-      std::cerr << "error in check stops - order is neither stop or stop limit";
+      std::cerr << "error in check stops - order is neither stop or stop limit\n";
     }
     
     auto stop_trades = submit(market);
