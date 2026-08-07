@@ -164,9 +164,18 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
   }
 
   for (const auto& stop : to_trigger) {
-    auto market = std::make_shared<MarketOrder>(stop->id(), stop->side(), stop->quantity());
+
+    std::shared_ptr<Order> market {};
+
+    if (stop->type_str() == "STOP ORDER") {
+       market = std::make_shared<MarketOrder>(stop->id(), stop->side(), stop->quantity());
+    } else if (stop->type_str() == "STOP LIMIT ORDER") {
+      market = std::make_shared<LimitOrder>(stop->id(), stop->side(), stop->quantity(), stop->price());
+    } else {
+      std::cerr << "error in check stops - order is neither stop or stop limit";
+    }
     
-    auto stop_trades = match(market);
+    auto stop_trades = submit(market);
 
     for (const auto& trade : stop_trades) {
       trades.push_back(trade);

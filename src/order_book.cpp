@@ -36,13 +36,6 @@ bool OrderBook::cancel_order(OrderID id) {
     auto price_level = bids_.find(order->price());
     if (price_level != bids_.end()) {
       auto& queue = price_level->second;  // store bids_ deque as queue
-      // use order_iter to iterate through orders in the deque
-      // for (auto order_iter = queue.begin(); order_iter != queue.end(); ++order_iter) {
-      //   if ((*order_iter)->id() == id) { 
-      //     queue.erase(order_iter); 
-      //     break;
-      //   }
-      // }
       queue.erase(index_entry->second.iter);
       
       if (queue.empty()) {
@@ -54,13 +47,6 @@ bool OrderBook::cancel_order(OrderID id) {
       auto price_level = asks_.find(order->price());
       if (price_level != asks_.end()) {
         auto& queue = price_level->second;  // store asks_ deque as queue
-        // use order_iter to iterate through orders in the deque
-        // for (auto order_iter = queue.begin(); order_iter != queue.end(); ++order_iter) {
-        //   if ((*order_iter)->id() == id) {
-        //     queue.erase(order_iter);
-        //     break;
-        //   }
-        // }
         queue.erase(index_entry->second.iter);
 
         if (queue.empty()) {
