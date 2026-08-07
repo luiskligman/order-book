@@ -64,11 +64,6 @@ class Order {
       return;
     }
 
-    // std::string toString() {
-    //   return "Order ID: " + id() + " Side: " + side() + " Original Qty: " + original_qty() +
-    //     " Quantity: " + quantity() + " Price: " + price() + " Stop Price: " + stop_price() + 
-    //     " TimeStamp: " + std::string(timestamp());
-    // }
     std::string toString() const {
       std::ostringstream oss;
       oss << "Order ID: " << id()
