@@ -17,6 +17,9 @@ class MatchingEngine {
   private:
     OrderBook& book_;
 
+    // Stores the id for the next trade that takes place
+    uint64_t trade_id = 1;
+
     // Stop orders waiting for their trigger price to be hit
     std::map<Price, std::deque<OrderPtr>> buy_stops_;  // ascending - trigger when price rises
     std::map<Price, std::deque<OrderPtr>, std::greater<Price>> sell_stops_;  // descending - trigger when price falls

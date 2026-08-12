@@ -54,7 +54,7 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming) {
 
       Qty fill_qty = std::min(incoming->quantity(), maker->quantity());
 
-      trades.push_back({0,  // default TradeID will be 0, need an auto increment
+      trades.push_back({trade_id++,
                         maker->id(), 
                         incoming->id(),
                         incoming->side(),

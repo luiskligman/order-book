@@ -54,8 +54,12 @@ int main() {
   populate_book(engine);
   std::cout << book.print();
 
-  // cancel_all_orders(book);
-  // std::cout << book.print();
+  std::vector<Trade> trades = engine.submit(std::make_shared<MarketOrder>(uid++, Side::SELL, 300));
+  for (Trade trade : trades) {
+    std::cout << trade.toString() << std::endl;
+  }
+  std::cout << "\n";
+  std::cout << book.print();
 
   return 1;
 }
