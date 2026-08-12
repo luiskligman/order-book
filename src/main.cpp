@@ -5,6 +5,39 @@
 #include <iostream>
 #include <iomanip>
 
+constexpr bool print_orders { false };  // optionally print information about each order
+constexpr int64_t num_orders { 3 };  // number of orders at each price level
+constexpr Qty qty_per_order { 10 };
+constexpr int64_t price_levels { 5 };  // number of price levels above and below starting price
+constexpr Price starting_price { 100 };
+int64_t uid { 1 };
+
+void populate_book(MatchingEngine& engine) {
+  Price ask_price { starting_price };
+  Price bid_price { starting_price };
+
+  for (int level = 0; level < price_levels; ++level) {
+
+    ask_price += 1;
+    bid_price-= 1;
+
+    for (int i = 0; i < num_orders; ++i) {
+
+      engine.submit(std::make_shared<LimitOrder>(uid, Side::SELL, qty_per_order, ask_price));
+      engine.submit(std::make_shared<LimitOrder>(uid + 1, Side::BUY, qty_per_order, bid_price));
+      uid += 2;
+
+    }
+  }
+}
+
+void cancel_all_orders(OrderBook& book) {
+  for (int i = 1; i < num_orders * price_levels * 2; i += 2) {
+    book.cancel_order(i);
+    book.cancel_order(i + 1);
+  }
+}
+
 int main() {
 
   // Testing toString() function
@@ -17,33 +50,12 @@ int main() {
 
   OrderBook book;
   MatchingEngine engine(book);
-  
-  // Testing order book add / cancel order
-  engine.submit(std::make_shared<LimitOrder>(100, Side::SELL, 250, 104));
-  engine.submit(std::make_shared<LimitOrder>(101, Side::SELL, 150, 103));
-  engine.submit(std::make_shared<LimitOrder>(102, Side::SELL, 100, 102));
-  engine.submit(std::make_shared<LimitOrder>(103, Side::SELL, 100, 101));
-  engine.submit(std::make_shared<LimitOrder>(104, Side::SELL, 100, 101));
 
-  engine.submit(std::make_shared<LimitOrder>(105, Side::BUY, 100, 99));
-  engine.submit(std::make_shared<LimitOrder>(106, Side::BUY, 100, 99));
-  engine.submit(std::make_shared<LimitOrder>(107, Side::BUY, 150, 98));
-  engine.submit(std::make_shared<LimitOrder>(108, Side::BUY, 100, 97));
-  engine.submit(std::make_shared<LimitOrder>(109, Side::BUY, 300, 96));
-
-  //engine.submit(std::make_shared<StopOrder>(99, Side::SELL, 100, 99));
-  engine.submit(std::make_shared<StopLimitOrder>(97, Side::BUY, 100, 99, 99));
-
-  engine.submit(std::make_shared<MarketOrder>(98, Side::SELL, 1));
-
+  populate_book(engine);
   std::cout << book.print();
 
-
-
-
-
-
-
+  // cancel_all_orders(book);
+  // std::cout << book.print();
 
   return 1;
 }

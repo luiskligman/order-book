@@ -35,35 +35,28 @@ void OrderBook::add_order(OrderPtr order) {
 bool OrderBook::cancel_order(OrderID id) {
   auto index_entry = order_index_.find(id);
 
+  // order does not exist
   if (index_entry == order_index_.end()) return false;
 
   // index_entry->first is the OrderID, index_entry->second is a 
   // pointer to the Order with OrderID
   OrderPtr order = index_entry->second.order;
 
-  // Remove from the correct price level on the correct side
-  if (order->side() == Side::BUY) {
-    auto price_level = bids_.find(order->price());
-    if (price_level != bids_.end()) {
+  auto delete_order = [&](auto& side) {
+    auto price_level = side.find(order->price());
+    if (price_level != side.end()) {
       auto& queue = price_level->second;  // store bids_ deque as queue
       queue.erase(index_entry->second.iter);
       
       if (queue.empty()) {
-          bids_.erase(price_level);
+          side.erase(price_level);
         }
       
     } 
-  } else {
-      auto price_level = asks_.find(order->price());
-      if (price_level != asks_.end()) {
-        auto& queue = price_level->second;  // store asks_ deque as queue
-        queue.erase(index_entry->second.iter);
+  };
 
-        if (queue.empty()) {
-          asks_.erase(price_level);
-      }
-    }
-  }
+  // Remove from the correct price level on the correct side
+  order->side() == Side::BUY ? delete_order(bids_) : delete_order(asks_);
 
   order_index_.erase(index_entry);
   return true;

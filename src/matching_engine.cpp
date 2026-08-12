@@ -40,90 +40,56 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming) {
     return resting_price >= incoming->price(); 
   };
 
+  auto match_order = [&](auto& resting_side) {
+    while (incoming->quantity() > 0 && !resting_side.empty()) {
+
+      auto best_level = resting_side.begin();
+
+      if (!price_acceptable(best_level->first)) {
+        break;
+      }
+
+      auto& queue = best_level->second;
+      OrderPtr maker = queue.front();  // oldest order at this price level (FIFO)
+
+      Qty fill_qty = std::min(incoming->quantity(), maker->quantity());
+
+      trades.push_back({0,  // default TradeID will be 0, need an auto increment
+                        maker->id(), 
+                        incoming->id(),
+                        incoming->side(),
+                        maker->price(),
+                        fill_qty,
+                        std::chrono::steady_clock::now()
+                      });
+      
+      incoming->fill(fill_qty);
+      maker->fill(fill_qty);
+
+      // If the maker is fully filled, remove it from the book
+      if (book_.remove_if_filled(maker)) {
+        std::cout << "Order Removed: " << maker->toString() << std::endl;
+      }
+    }
+  };
+
+  auto check_marketable_stops = [&]() {
+    // Check if stops can become marketable after last trade executed
+    if (!trades.empty()) {
+      auto stop_trades = check_stops(trades.back().price);
+      // trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
+      for (auto& trade : stop_trades) {
+        trades.push_back(trade);
+      }
+    }
+  };
+
+
   // BUY orders match against asks
   // SELL orders match against bids
-  if (incoming->side() == Side::BUY) {
-    while (incoming->quantity() > 0 && !book_.asks_.empty()) {
+  incoming->side() == Side::BUY ? match_order(book_.asks_) : match_order(book_.bids_);
 
-      auto best_level = book_.asks_.begin();  // lowest ask price level first
-
-      if (!price_acceptable(best_level->first)) {
-        break;
-      }
-
-      auto& queue = best_level->second;
-      OrderPtr maker = queue.front();  // oldest order at this price level (FIFO)
-
-      Qty fill_qty = std::min(incoming->quantity(), maker->quantity());
-
-      trades.push_back({0,  // default TradeID will be 0, need an auto increment
-                        maker->id(), 
-                        incoming->id(),
-                        incoming->side(),
-                        maker->price(),
-                        fill_qty,
-                        std::chrono::steady_clock::now()
-                      });
-      
-      incoming->fill(fill_qty);
-      maker->fill(fill_qty);
-
-      // If the maker is fully filled, remove it from the book
-      if (book_.remove_if_filled(maker)) {
-        std::cout << "Order Removed: " << maker->toString() << std::endl;
-      }
-    }
-
-    // Check if stops can become marketable after last trade executed
-    if (!trades.empty()) {
-      auto stop_trades = check_stops(trades.back().price);
-      // trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
-      for (auto& trade : stop_trades) {
-        trades.push_back(trade);
-      }
-    }
-
-  } else {
-    while (incoming->quantity() > 0 && !book_.bids_.empty()) {
-
-      auto best_level = book_.bids_.begin();  // highest bid fist
-
-      if (!price_acceptable(best_level->first)) {
-        break;
-      }
-
-      auto& queue = best_level->second;
-      OrderPtr maker = queue.front();  // oldest order at this price level (FIFO)
-
-      Qty fill_qty = std::min(incoming->quantity(), maker->quantity());
-
-      trades.push_back({0,  // default TradeID will be 0, need an auto increment
-                        maker->id(), 
-                        incoming->id(),
-                        incoming->side(),
-                        maker->price(),
-                        fill_qty,
-                        std::chrono::steady_clock::now()
-                      });
-      
-      incoming->fill(fill_qty);
-      maker->fill(fill_qty);
-
-      // If the maker is fully filled, remove it from the book
-      if (book_.remove_if_filled(maker)) {
-        std::cout << "Order Removed: " << maker->toString() << std::endl;
-      }
-    }
-
-    // Check if stops can become marketable after last trade executed
-    if (!trades.empty()) {
-      auto stop_trades = check_stops(trades.back().price);
-      // trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
-      for (auto& trade : stop_trades) {
-        trades.push_back(trade);
-      }
-    }
-  }
+  check_marketable_stops();
 
   return trades;
   

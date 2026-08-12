@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmake --build .)",
+      "Bash(pip3 install *)"
+    ]
+  }
+}
