@@ -119,8 +119,12 @@ class LimitOrder : public Order {
       : Order(id, side, quantity, to_ticks(price), 0)
       {}
 
-      bool is_marketable() const override { return true; }
-      std::string type_str() const override { return "LIMIT"; }
+    LimitOrder(OrderID id, Side side, int quantity, Price price)
+      : Order(id, side, quantity, price, 0)
+      {}
+
+    bool is_marketable() const override { return true; }
+    std::string type_str() const override { return "LIMIT"; }
 };
 
 // MarketOrder
@@ -145,6 +149,10 @@ class StopOrder : public Order {
     : Order(id, side, quantity, 0, to_ticks(stop_price))
     {}
 
+    StopOrder(OrderID id, Side side, int quantity, Price stop_price)
+    : Order(id, side, quantity, 0, stop_price)
+    {}
+
     bool is_marketable() const override { return false; }
     std::string type_str() const override { return "STOP ORDER"; }
 };
@@ -156,6 +164,10 @@ class StopLimitOrder : public Order {
   public:
     StopLimitOrder(OrderID id, Side side, int quantity, double price, double stop_price)
     : Order(id, side, quantity, to_ticks(price), to_ticks(stop_price))
+    {}
+
+    StopLimitOrder(OrderID id, Side side, int quantity, Price price, Price stop_price)
+    : Order(id, side, quantity, price, stop_price)
     {}
 
     bool is_marketable() const override { return false; }
