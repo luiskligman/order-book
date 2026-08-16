@@ -77,7 +77,7 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming) {
     // Check if stops can become marketable after last trade executed
     if (!trades.empty()) {
       auto stop_trades = check_stops(trades.back().price);
-      // trades.insert(trades.end(), stop_trades.begin(), stop_trades.end());
+      
       for (auto& trade : stop_trades) {
         trades.push_back(trade);
       }

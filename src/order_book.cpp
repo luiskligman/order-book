@@ -10,17 +10,11 @@ void OrderBook::add_order(OrderPtr order) {
 
   // Route to the correct side
   if (order->side() == Side::BUY) {
-    // bids_[order->price()].push_back(order);
-    // iter = std::prev(bids_[order->price()].end());
-
     auto& level = bids_[order->price()];
     level.push_back(order);
     iter = std::prev(level.end());
 
   } else {
-    // asks_[order->price()].push_back(order);
-    // iter = std::prev(asks_[order->price()].end());
-
     auto& level = asks_[order->price()];
     level.push_back(order);
     iter = std::prev(level.end());

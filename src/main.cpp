@@ -33,25 +33,35 @@ void populate_book(MatchingEngine& engine) {
 
 int main() {
 
-  // Testing toString() function
-  LimitOrder limitorder = LimitOrder{1, Side::BUY, 100, 0.00};
+  // // Testing toString() function
+  // LimitOrder limitorder = LimitOrder{1, Side::BUY, 100, 0.00};
 
-  std::cout << std::fixed 
-            << std::setprecision(2) 
-            << limitorder.toString() 
-            << std::endl;
+  // std::cout << std::fixed 
+  //           << std::setprecision(2) 
+  //           << limitorder.toString() 
+  //           << std::endl;
 
   OrderBook book;
   MatchingEngine engine(book);
 
 
-  engine.submit(std::make_shared<LimitOrder>(999, Side::BUY, 1, 99.9999));
+  // engine.submit(std::make_shared<LimitOrder>(999, Side::BUY, 1, 99.9999));
 
-  populate_book(engine);
+  // thin resting liquidity: only 2 available at 101, stop order wants 10
+  engine.submit(std::make_shared<LimitOrder>(1, Side::SELL, 2, 101.00));
+
+  // dormant buy stop-limit: triggers at 100, limits at 101
+  engine.submit(std::make_shared<StopLimitOrder>(2, Side::BUY, 10, 101.00, 100.00));
+
+  // trip the stop
+  engine.submit(std::make_shared<LimitOrder>(3, Side::SELL, 1, 100.00));
+  auto trades = engine.submit(std::make_shared<LimitOrder>(4, Side::BUY, 1, 100.00));
+
+  // populate_book(engine);
   std::cout << book.print();
 
   
-  return 1;
+  return 0;
   
 }
 
