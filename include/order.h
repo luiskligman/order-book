@@ -5,6 +5,8 @@
 #include <string>
 #include <stdexcept>
 #include <sstream>
+#include <cmath>
+#include <iomanip>
 
 // OrderId is a type alias for unsigned 64 int
 using OrderID = uint64_t;
@@ -14,12 +16,26 @@ using Qty = int64_t;
 // Side represents which direction an order is
 enum class Side { BUY, SELL };
 
+constexpr int64_t PRICE_SCALE = 10000;
+
 inline std::ostream& operator<<(std::ostream& os, Side s) {
   switch(s) {
     case Side::BUY: return os << "BUY";
     case Side::SELL: return os << "SELL";
   }
   return os << "unknown";
+}
+
+inline Price to_ticks(const double real_price) {
+  return static_cast<Price>(std::llround(real_price * PRICE_SCALE));
+}
+
+inline std::string ticks_to_string(Price ticks) {
+  Price whole = ticks / PRICE_SCALE;
+  Price frac = ticks % PRICE_SCALE;
+  std::ostringstream oss;
+  oss << whole << '.' << std::setfill('0') << std::setw(4) << frac;
+  return oss.str();
 }
 
 class Order {
@@ -70,8 +86,8 @@ class Order {
           << "   Side: " << side()
           << "   Original Qty: " << original_qty()
           << "   Quantity: " << quantity()
-          << "   Price: " << price()
-          << "   Stop Price: " << stop_price()
+          << "   Price: " << ticks_to_string(price())
+          << "   Stop Price: " << ticks_to_string(stop_price())
           << "   Timestamp: " << timestamp().time_since_epoch().count();
       return oss.str();
     }
@@ -100,7 +116,7 @@ class Order {
 class LimitOrder : public Order {
   public: 
     LimitOrder(OrderID id, Side side, int quantity, double price)
-      : Order(id, side, quantity, price, 0.0)
+      : Order(id, side, quantity, to_ticks(price), 0)
       {}
 
       bool is_marketable() const override { return true; }
@@ -113,7 +129,7 @@ class LimitOrder : public Order {
 class MarketOrder : public Order {
   public:
     MarketOrder(OrderID id, Side side, int quantity)
-    : Order(id, side, quantity, 0.0, 0.0)
+    : Order(id, side, quantity, 0, 0)
     {}
 
     bool is_marketable() const override { return true; }
@@ -126,7 +142,7 @@ class MarketOrder : public Order {
 class StopOrder : public Order {
   public:
     StopOrder(OrderID id, Side side, int quantity, double stop_price)
-    : Order(id, side, quantity, 0.0, stop_price)
+    : Order(id, side, quantity, 0, to_ticks(stop_price))
     {}
 
     bool is_marketable() const override { return false; }
@@ -139,7 +155,7 @@ class StopOrder : public Order {
 class StopLimitOrder : public Order {
   public:
     StopLimitOrder(OrderID id, Side side, int quantity, double price, double stop_price)
-    : Order(id, side, quantity, price, stop_price)
+    : Order(id, side, quantity, to_ticks(price), to_ticks(stop_price))
     {}
 
     bool is_marketable() const override { return false; }

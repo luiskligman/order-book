@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cmake --build .)",
-      "Bash(pip3 install *)"
+      "Bash(pip3 install *)",
+      "Bash(cmake --build build)"
     ]
   }
 }

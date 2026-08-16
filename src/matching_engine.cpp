@@ -113,21 +113,21 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
 
   std::vector<OrderPtr> to_trigger;
 
-  // add buy market stops to to_trigger vector
-  for (auto stop_iter = buy_stops_.begin(); stop_iter != buy_stops_.end() && stop_iter->first <= last_price; ) {
-    for (const auto& stop : stop_iter->second) {
-      to_trigger.push_back(stop);
+  // take a sides stops and add to the to_trigger vector if the stop is ready to become live
+  auto trigger = [&](auto& stop_side) {
+    for (auto stop_iter = stop_side.begin(); stop_iter != stop_side.end() && stop_iter->first <= last_price; ) {
+      for (const auto& stop : stop_iter->second) {
+        to_trigger.push_back(stop);
+      }
+      stop_iter = stop_side.erase(stop_iter);
     }
-    stop_iter = buy_stops_.erase(stop_iter);
-  }
+  };
+
+  // add buy market stops to to_trigger vector
+  trigger(buy_stops_);
 
   // add sell market stops to to_trigger vector
-  for (auto stop_iter = sell_stops_.begin(); stop_iter != sell_stops_.end() && stop_iter->first >= last_price; ) {
-    for (const auto& stop : stop_iter->second) {
-      to_trigger.push_back(stop);
-    }
-    stop_iter = sell_stops_.erase(stop_iter);
-  }
+  trigger(sell_stops_);
 
   for (const auto& stop : to_trigger) {
 

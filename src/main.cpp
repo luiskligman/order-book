@@ -31,13 +31,6 @@ void populate_book(MatchingEngine& engine) {
   }
 }
 
-void cancel_all_orders(OrderBook& book) {
-  for (int i = 1; i < num_orders * price_levels * 2; i += 2) {
-    book.cancel_order(i);
-    book.cancel_order(i + 1);
-  }
-}
-
 int main() {
 
   // Testing toString() function
@@ -51,16 +44,14 @@ int main() {
   OrderBook book;
   MatchingEngine engine(book);
 
+
+  engine.submit(std::make_shared<LimitOrder>(999, Side::BUY, 1, 99.9999));
+
   populate_book(engine);
   std::cout << book.print();
 
-  std::vector<Trade> trades = engine.submit(std::make_shared<MarketOrder>(uid++, Side::SELL, 300));
-  for (Trade trade : trades) {
-    std::cout << trade.toString() << std::endl;
-  }
-  std::cout << "\n";
-  std::cout << book.print();
-
+  
   return 1;
+  
 }
 

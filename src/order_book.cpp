@@ -127,7 +127,7 @@ std::string OrderBook::print() const {
 
   auto row = [&](const level& l, const char* color) {
     os << "  " << color
-       << std::setw(10) << l.price
+       << std::setw(10) << ticks_to_string(l.price)
        << std::setw(13) << l.qty
        << std::setw(8) << l.orders
        << DIM << std::setw(15) << l.cumulative << RST 
@@ -152,11 +152,12 @@ std::string OrderBook::print() const {
   if (!bid || !ask) {
     os << DIM << "  (one side empty)\n" << RST;
   } else if (*bid >= *ask) {
-    os << BOLD << RED << "  *** CROSSED: bid " << *bid 
-       << " >= ask " << *ask << " ***" << RST << "\n";
+    os << BOLD << RED << "  *** CROSSED: bid " << ticks_to_string(int(*bid)) 
+       << " >= ask " << ticks_to_string(int(*ask)) << " ***" << RST << "\n";
   } else {
-    os << "  spread " << (*ask - *bid) << DIM
-       << "  mid " << ((*bid + *ask) / 2 ) << RST << 
+
+    os << "  spread " << ticks_to_string(int(*ask - *bid)) << DIM
+       << "  mid " << ticks_to_string(int((*bid + *ask) / 2 )) << RST << 
        "\n";
   }
 
