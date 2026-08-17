@@ -13,7 +13,7 @@ constexpr int64_t price_levels { 5 };  // number of price levels above and below
 constexpr Price starting_price { 100 };
 
 /*
-  The goal of 'benchmark_test_1.cpp is to provide an intial benchmark
+  The goal of 'benchmark_test_1.cpp' is to provide an intial benchmark
   insight for the efficiency of the program at this stage. This is done
   to enable verification proving that changes are increasing the runtime
   efficiency of this application.
@@ -114,6 +114,6 @@ int main() {
   std::cout << "  cancel middle avg: " << cancel_middle_sum / double(size(tests)) << std::endl;
   std::cout << "  cancel last avg: " << cancel_last_sum / double(size(tests)) << std::endl;
 
-  return 1;
+  return 0;
 
 }

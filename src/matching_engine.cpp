@@ -67,9 +67,7 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming) {
       maker->fill(fill_qty);
 
       // If the maker is fully filled, remove it from the book
-      if (book_.remove_if_filled(maker)) {
-        std::cout << "Order Removed: " << maker->toString() << std::endl;
-      }
+      book_.remove_if_filled(maker);
     }
   };
 
@@ -77,7 +75,7 @@ std::vector<Trade> MatchingEngine::match(OrderPtr incoming) {
     // Check if stops can become marketable after last trade executed
     if (!trades.empty()) {
       auto stop_trades = check_stops(trades.back().price);
-      
+
       for (auto& trade : stop_trades) {
         trades.push_back(trade);
       }
@@ -114,8 +112,9 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
   std::vector<OrderPtr> to_trigger;
 
   // take a sides stops and add to the to_trigger vector if the stop is ready to become live
-  auto trigger = [&](auto& stop_side) {
-    for (auto stop_iter = stop_side.begin(); stop_iter != stop_side.end() && stop_iter->first <= last_price; ) {
+  auto trigger = [&](auto& stop_side, Side side) {
+    for (auto stop_iter = stop_side.begin(); 
+          stop_iter != stop_side.end() && (side == Side::BUY ? stop_iter->first <= last_price : stop_iter->first >= last_price); ) {
       for (const auto& stop : stop_iter->second) {
         to_trigger.push_back(stop);
       }
@@ -124,10 +123,10 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
   };
 
   // add buy market stops to to_trigger vector
-  trigger(buy_stops_);
+  trigger(buy_stops_, Side::BUY);
 
   // add sell market stops to to_trigger vector
-  trigger(sell_stops_);
+  trigger(sell_stops_, Side::SELL);
 
   for (const auto& stop : to_trigger) {
 

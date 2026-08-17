@@ -87,7 +87,7 @@ TEST_CASE("a triggered StopOrder becomes a MarketOrder and fills", "[matching_en
   REQUIRE(stop_filled);
 }
 
-TEST_CASE("a triggered StopLimitOrder that can't fully fill rests as a LimitOrder", "[matching_engine][stops]") {
+TEST_CASE("a triggered buy StopLimitOrder that can't fully fill rests as a LimitOrder", "[matching_engine][stops]") {
   OrderBook book;
   MatchingEngine engine(book);
 
@@ -109,5 +109,30 @@ TEST_CASE("a triggered StopLimitOrder that can't fully fill rests as a LimitOrde
     if (t.taker_id == 2) stop_filled = true;
   }
 
-  // REQUIRE(stop_filled);
+  REQUIRE(stop_filled);
+}
+
+TEST_CASE("a triggered sell StopLimitOrder that can't fully fill rests as a LimitOrder", "[matching_engine][stops]") {
+  OrderBook book;
+  MatchingEngine engine(book);
+
+  // thin resting liquidity: only 2 available at 99, stop order wants 10
+  engine.submit(std::make_shared<LimitOrder>(1, Side::BUY, 2, 99.00));
+
+  // dormant sell stop-limit: triggers at 100, limits at 99
+  engine.submit(std::make_shared<StopLimitOrder>(2, Side::SELL, 10, 99.00, 100.00));
+
+  // trip the stop
+  engine.submit(std::make_shared<LimitOrder>(3, Side::BUY, 1, 100.00));
+  auto trades = engine.submit(std::make_shared<LimitOrder>(4, Side::SELL, 1, 100.00));
+
+  // order 2 should have filled 2, and be resting with 8 left as a LIMIT order
+  REQUIRE(book.best_ask() == to_ticks(99.00));
+
+  bool stop_filled = false;
+  for (const auto& t : trades) {
+    if (t.taker_id == 2) stop_filled = true;
+  }
+
+  REQUIRE(stop_filled);
 }
