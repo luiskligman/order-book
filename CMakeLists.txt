@@ -53,8 +53,8 @@ foreach(TEST ${TESTS})
   # Register the binary with CTEST so it knows how to run
   add_test(NAME ${TEST} COMMAND ${TEST})
 
-  target_compile_options(${TEST} PRIVATE -fsanitize=address -g)
-  target_link_options(${TEST} PRIVATE -fsanitize=address)
+  # target_compile_options(${TEST} PRIVATE -fsanitize=address -g)
+  # target_link_options(${TEST} PRIVATE -fsanitize=address)
 
 endforeach()
 

@@ -25,6 +25,8 @@ constexpr Price starting_price { 100 };
   Averages After Changing from Deque to List
                     Cancel Middle: .005156 +- .003    Cancel Last: .00556273 +- .003
                     Lots of noise at this level due mainly to OS noise
+  Averages After Turning off Address Sanitizer
+                    Cancel Middle: .000857633 +- .00005   Cancel Last: .000816933 +- .00005
 */
 
 struct Benchmark {
