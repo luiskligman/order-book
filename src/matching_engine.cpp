@@ -9,7 +9,7 @@
 
 MatchingEngine::MatchingEngine(OrderBook& book) : book_(book) {}
 
-std::vector<Trade> MatchingEngine::submit(OrderPtr incoming) {
+std::vector<Trade> MatchingEngine::submit(OrderPtr const &incoming) {
   if (!incoming->is_marketable()) {
     incoming->side() == Side::BUY ?
       buy_stops_[incoming->stop_price()].push_back(incoming) :

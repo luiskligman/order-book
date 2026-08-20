@@ -13,8 +13,16 @@ using OrderID = uint64_t;
 using Price = int64_t;
 using Qty = int64_t;
 
-// Side represents which direction an order is
-enum class Side { BUY, SELL };
+/*
+  Side represents which direction an order is
+
+  Uses std::uint8_t (clang-tidy: performance-enum-size) insteaf of the default 
+  int. Sizeof(Order) is still 64 after this change because side_ sits between 
+  two 8-byte-aligned members (id_ before, original_qty_ after).
+  Whatever precedes an 8-byte-aligned field gets padded up to next multiple 
+  of 8 regardless of its own size
+*/ 
+enum class Side : std::uint8_t { BUY, SELL };
 
 constexpr int64_t PRICE_SCALE = 10000;
 

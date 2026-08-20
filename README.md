@@ -42,6 +42,12 @@ Run the demo:
 ```bash
 ./order_book
 ```
+
+### Using `clang-tidy`
+```bash
+clang-tidy -p build src/order_book.cpp src/matching_engine.cpp src/main.cpp
+```
+
 ### Output
 **Note**: this output was created using the `populate_book()` function.
 ```

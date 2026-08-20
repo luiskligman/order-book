@@ -19,14 +19,14 @@ class OrderBook {
 
   public: 
     // Add an order to the appropriate side of the book
-    void add_order(OrderPtr order);
+    void add_order(OrderPtr const &order);
 
     // Remove an order by ID. Returns true if found and removed
     bool cancel_order(OrderID id);
 
     // Remove an order if quantity is zero
     // Return true is removed, false if not
-    bool remove_if_filled(OrderPtr order);
+    bool remove_if_filled(OrderPtr const &order);
 
     // Returns the best bid price (highest buy), if any bids exist
     std::optional<Price> best_bid() const; 

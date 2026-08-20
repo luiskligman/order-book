@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <list>
 
-void OrderBook::add_order(OrderPtr order) {
+void OrderBook::add_order(OrderPtr const &order) {
 
   std::list<OrderPtr>::iterator iter; 
 
@@ -57,7 +57,7 @@ bool OrderBook::cancel_order(OrderID id) {
 
 }
 
-bool OrderBook::remove_if_filled(OrderPtr order) {
+bool OrderBook::remove_if_filled(OrderPtr const &order) {
   // Order with quantity should not be removed
   if (order->quantity() != 0) {
     return false;
