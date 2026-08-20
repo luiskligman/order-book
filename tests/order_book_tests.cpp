@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "../include/order_book.h"
-#include "../include/matching_engine.h"
+#include "order_book.h"
+#include "matching_engine.h"
 
 
 TEST_CASE("cancel_order removes a resting order on either side", "[order_book]") {

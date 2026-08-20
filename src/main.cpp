@@ -1,6 +1,6 @@
-#include "../include/order.h"
-#include "../include/order_book.h"
-#include "../include/matching_engine.h"
+#include "order.h"
+#include "order_book.h"
+#include "matching_engine.h"
 
 #include <iostream>
 #include <iomanip>
@@ -9,12 +9,12 @@ constexpr bool print_orders { false };  // optionally print information about ea
 constexpr int64_t num_orders { 3 };  // number of orders at each price level
 constexpr Qty qty_per_order { 10 };
 constexpr int64_t price_levels { 5 };  // number of price levels above and below starting price
-constexpr Price starting_price { 100 };
+constexpr double starting_price { 100.00 };
 int64_t uid { 1 };
 
 void populate_book(MatchingEngine& engine) {
-  Price ask_price { starting_price };
-  Price bid_price { starting_price };
+  double ask_price { starting_price };
+  double bid_price { starting_price };
 
   for (int level = 0; level < price_levels; ++level) {
 
@@ -48,16 +48,16 @@ int main() {
   // engine.submit(std::make_shared<LimitOrder>(999, Side::BUY, 1, 99.9999));
 
   // thin resting liquidity: only 2 available at 101, stop order wants 10
-  engine.submit(std::make_shared<LimitOrder>(1, Side::SELL, 2, 101.00));
+  // engine.submit(std::make_shared<LimitOrder>(1, Side::SELL, 2, 101.00));
 
   // dormant buy stop-limit: triggers at 100, limits at 101
-  engine.submit(std::make_shared<StopLimitOrder>(2, Side::BUY, 10, 101.00, 100.00));
+  // engine.submit(std::make_shared<StopLimitOrder>(2, Side::BUY, 10, 101.00, 100.00));
 
   // trip the stop
-  engine.submit(std::make_shared<LimitOrder>(3, Side::SELL, 1, 100.00));
-  auto trades = engine.submit(std::make_shared<LimitOrder>(4, Side::BUY, 1, 100.00));
+  // engine.submit(std::make_shared<LimitOrder>(3, Side::SELL, 1, 100.00));
+  // auto trades = engine.submit(std::make_shared<LimitOrder>(4, Side::BUY, 1, 100.00));
 
-  // populate_book(engine);
+  populate_book(engine);
   std::cout << book.print();
 
   

@@ -1,4 +1,4 @@
-# include "../include/order_book.h"
+# include "order_book.h"
 
 #include <iostream>
 #include <iomanip>
@@ -85,8 +85,6 @@ std::string OrderBook::print() const {
   const char* BOLD = "\033[1m";
   const char* RST = "\033[0m";
 
-  int bar_width = 20;
-
   struct level { 
     Price price;
     Qty qty;
@@ -110,14 +108,8 @@ std::string OrderBook::print() const {
   auto asks = collect(asks_);
   auto bids = collect(bids_);
 
-
   std::ostringstream os;
   os << std::fixed << std::setprecision(2);
-
-  auto bar = [&](Qty q) {
-    int count = static_cast<int>((q + 49) / 50);
-    return std::string(count, '#');
-  };
 
   auto row = [&](const level& l, const char* color) {
     os << "  " << color
