@@ -4,6 +4,9 @@ project(OrderBook)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# used for clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include_directories(include)
 
 add_executable(order_book
@@ -39,6 +42,7 @@ catch_discover_tests(unit_tests)
 set(TESTS
   benchmark_test_1
   benchmark_test_2
+  benchmark_test_3
 )
 
 foreach(TEST ${TESTS})
