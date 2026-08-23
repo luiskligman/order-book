@@ -7,6 +7,7 @@
 #include <sstream>
 #include <cmath>
 #include <iomanip>
+#include <variant>
 
 // OrderId is a type alias for unsigned 64 int
 using OrderID = uint64_t;
@@ -46,30 +47,186 @@ inline std::string ticks_to_string(Price ticks) {
   return oss.str();
 }
 
-class Order {
-  public:
-    
-    Order(OrderID id, Side side, Qty quantity, Price price, Price stop_price)
-      : id_(id)
-      , side_(side)
-      , original_qty_(quantity)
-      , quantity_(quantity)
-      , price_(price)
-      , stop_price_(stop_price)
-      , timestamp_(std::chrono::steady_clock::now())
+
+// LimitOrder
+// Matches only at the limit price or better
+// is_marketable() returns true because we allow it to attempt a match
+// the matching engine will enfore the price constraint
+class LimitOrder {
+  public: 
+    LimitOrder(OrderID id, Side side, Qty quantity, double price)
+      : id_(id), side_(side), original_qty_(quantity)
+      , quantity_(quantity), price_(to_ticks(price))
+      , timestamp_(std::chrono::steady_clock::now()) 
       {}
 
-    // Virtual destructor is required any time you delete through a base class pointer
-    // Withjout, deleting a LimitOrder* through an Order* would be undefined behavior
-    virtual ~Order() = default;
+    LimitOrder(OrderID id, Side side, Qty quantity, Price price) 
+      : id_(id), side_(side), original_qty_(quantity)
+      , quantity_(quantity), price_(price)
+      , timestamp_(std::chrono::steady_clock::now()) {}
 
-    // RULE OF 5
-    // Manually delete copy ctor, copy assignment, move ctor, move assignment
-    // Makes compiler errors instead of undefined behavior
-    Order(const Order&) = delete;  // copy constructor
-    Order& operator=(const Order&) = delete;  // copy assignment
-    Order(Order&&) = delete;  // move constructor
-    Order& operator=(Order&&) = delete;  // move assignment
+    OrderID id() const { return id_; }
+    Side side() const { return side_; }
+    Qty original_qty() const { return original_qty_; }
+    Qty quantity() const { return quantity_; }
+    Price price() const { return price_; }
+    auto timestamp() const { return timestamp_; }
+
+    void fill(Qty fill_qty) {
+      if (quantity_ < fill_qty) {
+          throw std::runtime_error("fill quantity exceeds available quanity");
+      }
+      quantity_ -= fill_qty;
+    }
+
+    bool is_marketable() const { return true; }
+    std::string type_str() const { return "LIMIT"; }
+
+    std::string toString() const {
+      std::ostringstream oss;
+      oss << "Order ID: " << id_ 
+          << "  Side: " << side_
+          << "  Original Qty: " << original_qty_
+          << "  Quantity: " << quantity_
+          << "  Price: " << price_ 
+          << "  Timestamp: " << timestamp_.time_since_epoch().count();
+
+      return oss.str();
+    }
+
+  private:
+    OrderID id_;
+    Side side_;
+    Qty original_qty_;
+    Qty quantity_;
+    Price price_;
+    std::chrono::time_point<std::chrono::steady_clock> timestamp_;
+};
+
+// MarketOrder
+// Matches at whatever price is available
+// Price is stored as 0.0 since it is irrelevant for market orders
+class MarketOrder {
+  public:
+    MarketOrder(OrderID id, Side side, Qty quantity)
+    : id_(id), side_(side), original_qty_(quantity) 
+    , quantity_(quantity), timestamp_(std::chrono::steady_clock::now())
+    {}
+
+    OrderID id() const { return id_; }
+    Side side() const { return side_; }
+    Qty original_qty() const { return original_qty_; }
+    Qty quantity() const { return quantity_; }
+    auto timestamp() const { return timestamp_; }
+
+    void fill(Qty fill_qty) {
+      if (quantity_ < fill_qty) {
+          throw std::runtime_error("fill quantity exceeds available quanity");
+      }
+      quantity_ -= fill_qty;
+    }
+
+    bool is_marketable() const { return true; }
+    std::string type_str() const { return "MARKET"; }
+
+    std::string toString() const {
+      std::ostringstream oss;
+      oss << "Order ID: " << id_ 
+          << "  Side: " << side_
+          << "  Original Qty: " << original_qty_
+          << "  Quantity: " << quantity_
+          << "  Timestamp: " << timestamp_.time_since_epoch().count();
+
+      return oss.str();
+    }
+
+  private:
+    OrderID id_;
+    Side side_;
+    Qty original_qty_;
+    Qty quantity_;
+    std::chrono::time_point<std::chrono::steady_clock> timestamp_;
+
+};
+
+// StopOrder
+// Sits dormant until the market price crosses the trigger price
+// Once crossed it then becomes a market order
+class StopOrder {
+  public:
+    StopOrder(OrderID id, Side side, Qty quantity, double stop_price)
+    : id_(id), side_(side), original_qty_(quantity)
+    , quantity_(quantity), stop_price_(to_ticks(stop_price))
+    , timestamp_(std::chrono::steady_clock::now())
+    {}
+
+    StopOrder(OrderID id, Side side, Qty quantity, Price stop_price)
+    : id_(id), side_(side), original_qty_(quantity)
+    , quantity_(quantity), stop_price_(stop_price)
+    , timestamp_(std::chrono::steady_clock::now())
+    {}
+
+    OrderID id() const { return id_; }
+    Side side() const { return side_; }
+    Qty original_qty() const { return original_qty_; }
+    Qty quantity() const { return quantity_; }
+    Price stop_price() const { return stop_price_; }
+    auto timestamp() const { return timestamp_; }
+
+    void fill(Qty fill_qty) {
+      if (quantity_ < fill_qty) {
+          throw std::runtime_error("fill quantity exceeds available quanity");
+      }
+      quantity_ -= fill_qty;
+    }
+
+    bool is_marketable() const { return false; }
+    std::string type_str() const { return "STOP ORDER"; }
+
+    std::string toString() const {
+      std::ostringstream oss;
+      oss << "Order ID: " << id_ 
+          << "  Side: " << side_
+          << "  Original Qty: " << original_qty_
+          << "  Quantity: " << quantity_
+          << "  Stop Price: " << stop_price_ 
+          << "  Timestamp: " << timestamp_.time_since_epoch().count();
+
+      return oss.str();
+    }
+
+  private:
+    OrderID id_;
+    Side side_;
+    Qty original_qty_;
+    Qty quantity_;
+    Price stop_price_;
+    std::chrono::time_point<std::chrono::steady_clock> timestamp_;
+};
+
+// StopLimitOrder
+// Sits dormant until the market price crosses the trigger price
+// Then it becomes a limit order
+class StopLimitOrder {
+  public:
+
+    // Main constructor the user is expected to use, since it accepts doubles
+    StopLimitOrder(OrderID id, Side side, Qty quantity, double price, double stop_price)
+    : id_(id), side_(side), original_qty_(quantity)
+    , quantity_(quantity), price_(to_ticks(price)), stop_price_(to_ticks(stop_price))
+    , timestamp_(std::chrono::steady_clock::now())
+    {}
+
+    /*
+      Constructor used when converting the resting stop limit order to marketable, this
+      way there is no unecessary conversion back to a true price then back to ticks, 
+      just accept Price directly
+    */ 
+    StopLimitOrder(OrderID id, Side side, Qty quantity, Price price, Price stop_price)
+    : id_(id), side_(side), original_qty_(quantity)
+    , quantity_(quantity), price_(price), stop_price_(stop_price)
+    , timestamp_(std::chrono::steady_clock::now())
+    {}
 
     OrderID id() const { return id_; }
     Side side() const { return side_; }
@@ -77,107 +234,78 @@ class Order {
     Qty quantity() const { return quantity_; }
     Price price() const { return price_; }
     Price stop_price() const { return stop_price_; }
-    auto timestamp() const { return timestamp_; }  // might be able to just use auto
+    auto timestamp() const { return timestamp_; }
 
     void fill(Qty fill_qty) {
       if (quantity_ < fill_qty) {
           throw std::runtime_error("fill quantity exceeds available quanity");
-          return;
       }
       quantity_ -= fill_qty;
-      return;
     }
 
     std::string toString() const {
       std::ostringstream oss;
-      oss << "Order ID: " << id()
-          << "   Side: " << side()
-          << "   Original Qty: " << original_qty()
-          << "   Quantity: " << quantity()
-          << "   Price: " << ticks_to_string(price())
-          << "   Stop Price: " << ticks_to_string(stop_price())
-          << "   Timestamp: " << timestamp().time_since_epoch().count();
+      oss << "Order ID: " << id_ 
+          << "  Side: " << side_
+          << "  Original Qty: " << original_qty_
+          << "  Quantity: " << quantity_
+          << "  Price: " << price_ 
+          << "  Stop Price: " << stop_price_
+          << "  Timestamp: " << timestamp_.time_since_epoch().count();
+
       return oss.str();
     }
 
-    // pure virtual methods: every concrete order type must answer these
-    // is_marketable(): can this order match immediately against the book
-    // type_str(): human-readable name for printing
-    virtual bool is_marketable() const = 0;
-    virtual std::string type_str() const = 0;
+    bool is_marketable() const { return false; }
+    std::string type_str() const { return "STOP LIMIT ORDER"; }
 
-  private: 
-    const OrderID id_;
-    const Side side_;
-    const Qty original_qty_;
+  private:
+    OrderID id_;
+    Side side_;
+    Qty original_qty_;
     Qty quantity_;
-    const Price price_;
-    const Price stop_price_;
-    const std::chrono::time_point<std::chrono::steady_clock> timestamp_;
+    Price price_;
+    Price stop_price_;
+    std::chrono::time_point<std::chrono::steady_clock> timestamp_;
 };
 
+using OrderVariant = std::variant<LimitOrder, MarketOrder, StopOrder, StopLimitOrder>;
 
-// LimitOrder
-// Matches only at the limit price or better
-// is_marketable() returns true because we allow it to attempt a match
-// the matching engine will enfore the price constraint
-class LimitOrder : public Order {
-  public: 
-    LimitOrder(OrderID id, Side side, int quantity, double price)
-      : Order(id, side, quantity, to_ticks(price), 0)
-      {}
+template<class... Ts>
+struct overloaded : Ts... { using Ts::operator()...; };
 
-    LimitOrder(OrderID id, Side side, int quantity, Price price)
-      : Order(id, side, quantity, price, 0)
-      {}
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 
-    bool is_marketable() const override { return true; }
-    std::string type_str() const override { return "LIMIT"; }
-};
+// Writing auto as a lambda parameter type turns the lambda's call operator into a template
+inline OrderID id(const OrderVariant& order) {
+  return std::visit([](const auto& o) { return o.id(); }, order);
+}
 
-// MarketOrder
-// Matches at whatever price is available
-// Price is stored as 0.0 since it is irrelevant for market orders
-class MarketOrder : public Order {
-  public:
-    MarketOrder(OrderID id, Side side, int quantity)
-    : Order(id, side, quantity, 0, 0)
-    {}
+inline Side side(const OrderVariant& order) {
+  return std::visit([](const auto& o) { return o.side(); }, order);
+}
 
-    bool is_marketable() const override { return true; }
-    std::string type_str() const override { return "MARKET"; }
-};
+inline Qty quantity(const OrderVariant& order) {
+  return std::visit([](const auto& o) { return o.quantity(); }, order);
+}
 
-// StopOrder
-// Sits dormant until the market price crosses the trigger price
-// Once crossed it then becomes a market order
-class StopOrder : public Order {
-  public:
-    StopOrder(OrderID id, Side side, int quantity, double stop_price)
-    : Order(id, side, quantity, 0, to_ticks(stop_price))
-    {}
+inline Qty original_qty(const OrderVariant& order) {
+  return std::visit([](const auto& o) { return o.original_qty(); }, order);
+}
 
-    StopOrder(OrderID id, Side side, int quantity, Price stop_price)
-    : Order(id, side, quantity, 0, stop_price)
-    {}
+inline bool is_marketable(const OrderVariant& order) {
+  return std::visit([](const auto& o) { return o.is_marketable(); }, order);
+}
 
-    bool is_marketable() const override { return false; }
-    std::string type_str() const override { return "STOP ORDER"; }
-};
+inline std::string type_str(const OrderVariant& order) {
+  return std::visit([](const auto& o) { return o.type_str(); }, order);
+}
 
-// StopLimitOrder
-// Sits dormant until the market price crosses the trigger price
-// Then it becomes a limit order
-class StopLimitOrder : public Order {
-  public:
-    StopLimitOrder(OrderID id, Side side, int quantity, double price, double stop_price)
-    : Order(id, side, quantity, to_ticks(price), to_ticks(stop_price))
-    {}
+inline std::string toString(const OrderVariant& order) {
+  return std::visit([](const auto& o) { return o.toString(); }, order);
+}
 
-    StopLimitOrder(OrderID id, Side side, int quantity, Price price, Price stop_price)
-    : Order(id, side, quantity, price, stop_price)
-    {}
-
-    bool is_marketable() const override { return false; }
-    std::string type_str() const override { return "STOP LIMIT ORDER"; }
-};
+inline void fill(OrderVariant& order, Qty fill_qty) {
+  return std::visit([fill_qty](auto& o) { o.fill(fill_qty); }, order);
+}

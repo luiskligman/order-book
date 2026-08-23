@@ -3,27 +3,29 @@
 #include <iostream>
 #include <iomanip>
 #include <list>
+#include <utility>
 
-void OrderBook::add_order(OrderPtr const &order) {
+void OrderBook::add_order(LimitOrder order) {
 
-  std::list<OrderPtr>::iterator iter; 
+  OrderID order_id = order.id();
+  Side order_side = order.side();
+  Price order_price = order.price();
+
+  std::list<LimitOrder>::iterator iter; 
 
   // Route to the correct side
-  if (order->side() == Side::BUY) {
-    auto& level = bids_[order->price()];
-    level.push_back(order);
+  if (order_side == Side::BUY) {
+    auto& level = bids_[order_price];
+    level.push_back(std::move(order));
     iter = std::prev(level.end());
 
   } else {
-    auto& level = asks_[order->price()];
-    level.push_back(order);
+    auto& level = asks_[order_price];
+    level.push_back(std::move(order));
     iter = std::prev(level.end());
   }
 
-
-  OrderLocator locator {order, iter};
-
-  order_index_[order->id()] = locator;
+  order_index_[order_id] = iter;
 }
 
 bool OrderBook::cancel_order(OrderID id) {
@@ -32,15 +34,13 @@ bool OrderBook::cancel_order(OrderID id) {
   // order does not exist
   if (index_entry == order_index_.end()) return false;
 
-  // index_entry->first is the OrderID, index_entry->second is a 
-  // pointer to the Order with OrderID
-  OrderPtr order = index_entry->second.order;
+  std::list<LimitOrder>::iterator iter = index_entry->second;
 
   auto delete_order = [&](auto& side) {
-    auto price_level = side.find(order->price());
+    auto price_level = side.find(iter->price());
     if (price_level != side.end()) {
       auto& queue = price_level->second;  // store bids_ deque as queue
-      queue.erase(index_entry->second.iter);
+      queue.erase(iter);
       
       if (queue.empty()) {
           side.erase(price_level);
@@ -50,20 +50,21 @@ bool OrderBook::cancel_order(OrderID id) {
   };
 
   // Remove from the correct price level on the correct side
-  order->side() == Side::BUY ? delete_order(bids_) : delete_order(asks_);
+  //order->side() == Side::BUY ? delete_order(bids_) : delete_order(asks_);
+  iter->side() == Side::BUY ? delete_order(bids_) : delete_order(asks_);
 
   order_index_.erase(index_entry);
   return true;
 
 }
 
-bool OrderBook::remove_if_filled(OrderPtr const &order) {
+bool OrderBook::remove_if_filled(const LimitOrder& order) {
   // Order with quantity should not be removed
-  if (order->quantity() != 0) {
+  if (order.quantity() != 0) {
     return false;
   }
 
-  return cancel_order(order->id());
+  return cancel_order(order.id());
 }
 
 
@@ -98,7 +99,7 @@ std::string OrderBook::print() const {
     Qty running = 0;
     for (const auto& [price, orders] : side) {
       Qty q = 0;
-      for (const auto& o : orders) q += o->quantity();
+      for (const auto& o : orders) q += o.quantity();
       running += q;
       levels.push_back(level{price, q, orders.size(), running});
     }
@@ -157,6 +158,4 @@ std::string OrderBook::print() const {
 
   return os.str();
   
-
-
 }

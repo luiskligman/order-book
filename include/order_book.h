@@ -2,7 +2,7 @@
 
 #include "order.h"
 
-#include <memory>
+//#include <memory>
 #include <optional>
 #include <map>
 #include <list>
@@ -11,7 +11,7 @@
 #include <sstream>
 
 
-using OrderPtr = std::shared_ptr<Order>;
+//using OrderPtr = std::shared_ptr<Order>;
 
 class OrderBook {
 
@@ -19,14 +19,14 @@ class OrderBook {
 
   public: 
     // Add an order to the appropriate side of the book
-    void add_order(OrderPtr const &order);
+    void add_order(LimitOrder order);
 
     // Remove an order by ID. Returns true if found and removed
     bool cancel_order(OrderID id);
 
     // Remove an order if quantity is zero
     // Return true is removed, false if not
-    bool remove_if_filled(OrderPtr const &order);
+    bool remove_if_filled(const LimitOrder& order);
 
     // Returns the best bid price (highest buy), if any bids exist
     std::optional<Price> best_bid() const; 
@@ -39,20 +39,15 @@ class OrderBook {
 
   private:
 
-    struct OrderLocator {
-      OrderPtr order;
-      std::list<OrderPtr>::iterator iter;
-    };
-
     // Bids - highest price first, use std::greater<double> to reverse the default
     // ascending order so bids_.cbegin() is always the best (highest) bid
-    std::map<Price, std::list<OrderPtr>, std::greater<Price>> bids_;
+    std::map<Price, std::list<LimitOrder>, std::greater<Price>> bids_;
 
     // Asks - lowest price first (default order)
     // asks_.cbegin() is always the best (lowest) ask
-    std::map<Price, std::list<OrderPtr>> asks_;
+    std::map<Price, std::list<LimitOrder>> asks_;
 
     // Flat index - OrderID -> pointer into the book
-    std::unordered_map<OrderID, OrderLocator> order_index_;
+    std::unordered_map<OrderID, std::list<LimitOrder>::iterator> order_index_;
 
 };
