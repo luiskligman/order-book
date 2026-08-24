@@ -20,13 +20,13 @@ class MatchingEngine {
     // Stores the id for the next trade that takes place
     uint64_t trade_id = 1;
 
-    // Stop orders waiting for their trigger price to be hit
+    // StopOrders waiting for their trigger price to be hit
     std::map<Price, std::deque<OrderVariant>> buy_stops_;  // ascending - trigger when price rises
     std::map<Price, std::deque<OrderVariant>, std::greater<Price>> sell_stops_;  // descending - trigger when price falls
 
     // Core matching loop
-    std::vector<Trade> match(OrderVariant incoming);
+    std::vector<Trade> match(OrderVariant& incoming_order);
 
-    // After each fill, chick if any stop orders should now trigger
+    // After each fill, chick if any StopOrders should now trigger
     std::vector<Trade> check_stops(Price last_price);
 };

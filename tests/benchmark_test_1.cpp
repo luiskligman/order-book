@@ -26,6 +26,8 @@ constexpr Price starting_price { 100 };
                     Longer due to shifting of subsequent elements
   Averages After Changing from Deque to List:
                     Cancel Middle: .000857633 +- .00005   Cancel Last: .000816933 +- .00005
+  Averages After Changing to std::variant instead of std::make_shared and removing the vtable:
+                    Cancel Middle: .000399233 +- .0015   Cancel Last: .000421167 +- .0015
 */
 
 struct Benchmark {
@@ -34,7 +36,7 @@ struct Benchmark {
 };
 
 
-std::chrono::duration<double, std::milli> populate_book(MatchingEngine& engine, int64_t& uid) {
+std::chrono::duration<double, std::milli> populate_book(MatchingEngine& engine, uint64_t& uid) {
   Price ask_price { starting_price };
   Price bid_price { starting_price };
 
@@ -47,8 +49,8 @@ std::chrono::duration<double, std::milli> populate_book(MatchingEngine& engine, 
 
     for (int i = 0; i < num_orders; ++i) {
 
-      engine.submit(std::make_shared<LimitOrder>(uid, Side::SELL, qty_per_order, ask_price));
-      engine.submit(std::make_shared<LimitOrder>(uid + 1, Side::BUY, qty_per_order, bid_price));
+      engine.submit(LimitOrder{uid, Side::SELL, qty_per_order, ask_price});
+      engine.submit(LimitOrder{uid + 1, Side::BUY, qty_per_order, bid_price});
       uid += 2;
 
     }
@@ -62,7 +64,7 @@ std::chrono::duration<double, std::milli> populate_book(MatchingEngine& engine, 
 std::chrono::duration<double, std::milli> time_cancel_middle() {
   OrderBook book;
   MatchingEngine engine(book);
-  int64_t uid { 1 } ;
+  uint64_t uid { 1 } ;
   populate_book(engine, uid);
 
   auto start = std::chrono::steady_clock::now();
@@ -74,7 +76,7 @@ std::chrono::duration<double, std::milli> time_cancel_middle() {
 std::chrono::duration<double, std::milli> time_cancel_last() {
   OrderBook book;
   MatchingEngine engine(book);
-  int64_t uid { 1 } ;
+  uint64_t uid { 1 } ;
   populate_book(engine, uid);
 
   auto start = std::chrono::steady_clock::now();

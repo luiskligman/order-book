@@ -22,8 +22,8 @@
 /*
   Initial Averages: (10,000 orders)
                     Construction: 1.1951 ms     Match_Sum: 3.90039 ms
-  Averages After Changing:
-                    Construction:               Match_Sum: 
+  Averages After removing vtable and using std::variant over std::make_shared:
+                    Construction: 0.547944 ms   Match_Sum: 2.58867 ms
 */
 
 constexpr int64_t num_orders { 10'000 };
@@ -36,13 +36,13 @@ struct Benchmark {
 };
 
 std::chrono::duration<double, std::milli> time_construction() {
-  std::vector<OrderPtr> orders;
+  std::vector<OrderVariant> orders;
   orders.reserve(num_orders);  // reserve num_orders space in vector to avoid allocation noise during measurement
 
   auto start = std::chrono::steady_clock::now();
 
-  for (int64_t i = 0; i < num_orders; ++i) {
-    orders.push_back(std::make_shared<LimitOrder>(i, Side::SELL, qty_per_order, price));
+  for (uint64_t i = 0; i < num_orders; ++i) {
+    orders.push_back(LimitOrder{i, Side::SELL, qty_per_order, price});
   }
 
   auto end = std::chrono::steady_clock::now();
@@ -54,13 +54,13 @@ std::chrono::duration<double, std::milli> time_match_throughput() {
   OrderBook book;
   MatchingEngine engine(book);
 
-  for (int64_t i = 0; i < num_orders; ++i) {
-    engine.submit(std::make_shared<LimitOrder>(i, Side::SELL, qty_per_order, price));
+  for (uint64_t i = 0; i < num_orders; ++i) {
+    engine.submit(LimitOrder{i, Side::SELL, qty_per_order, price});
   }
 
   // one incoming order sized to fully cross every resting order in the book
   // one at a time, maximizing the number of hot-path fill iterations
-  auto incoming = std::make_shared<LimitOrder>(num_orders, Side::BUY, qty_per_order * num_orders, price);
+  auto incoming = LimitOrder{num_orders, Side::BUY, qty_per_order * num_orders, price};
 
   auto start = std::chrono::steady_clock::now();
   engine.submit(incoming);

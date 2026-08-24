@@ -12,12 +12,7 @@
 MatchingEngine::MatchingEngine(OrderBook& book) : book_(book) {}
 
 std::vector<Trade> MatchingEngine::submit(OrderVariant incoming) {
-  // if (!incoming.is_marketable()) {
-  //   incoming->side() == Side::BUY ?
-  //     buy_stops_[incoming->stop_price()].push_back(incoming) :
-  //     sell_stops_[incoming->stop_price()].push_back(incoming);
-  //   return {};  // no trades take place when submitting a non marketable order
-  // }
+
   if (!is_marketable(incoming)) {
     Price stop_trigger = std::visit(overloaded{
       [](const StopOrder& o) { return o.stop_price(); },
@@ -28,8 +23,8 @@ std::vector<Trade> MatchingEngine::submit(OrderVariant incoming) {
     }, incoming);
 
     side(incoming) == Side::BUY ?
-      buy_stops_[stop_trigger].push_back(std::move(incoming)) :
-      sell_stops_[stop_trigger].push_back(std::move(incoming));
+      buy_stops_[stop_trigger].push_back(incoming) :
+      sell_stops_[stop_trigger].push_back(incoming);
     return {};  // no trades take place when submitting a non marketable order
   }
 
@@ -38,33 +33,18 @@ std::vector<Trade> MatchingEngine::submit(OrderVariant incoming) {
   // Any unfilled quantity on a limit order rests in the book
   // Market orders that can't completely fill will expire, they never rest
   if (quantity(incoming) > 0 && std::holds_alternative<LimitOrder>(incoming)) {
-    book_.add_order(std::get<LimitOrder>(std::move(incoming)));
+    book_.add_order(std::get<LimitOrder>(incoming));
   }
 
   return trades;
 };
 
-std::vector<Trade> MatchingEngine::match(OrderVariant incoming) {
+std::vector<Trade> MatchingEngine::match(OrderVariant& incoming) {
 
   std::vector<Trade> trades;
 
-  auto price_acceptable = [&](Price resting_price) -> bool {
-    return std::visit(overloaded {
-      [](const MarketOrder&) { return true; },
-      [&](const LimitOrder& o) {
-        return side(incoming) == Side::BUY ? resting_price <= o.price() : resting_price >= o.price();
-      },
-      [&](const StopLimitOrder& o) {
-        return side(incoming) == Side::BUY ? resting_price <= o.price() : resting_price >= o.price();
-      },
-      [](const StopOrder&) -> bool {
-        throw std::logic_error("StopOrder should never reach match() directly");
-      }
-    }, incoming);
-  };
-
-  auto match_order = [&](auto& resting_side) {
-    while (quantity(incoming) > 0 && !resting_side.empty()) {
+  auto match_order = [&](auto& incoming_order, auto& resting_side, const auto& price_acceptable) {
+    while (incoming_order.quantity() > 0 && !resting_side.empty()) {
 
       auto best_level = resting_side.begin();
 
@@ -75,26 +55,42 @@ std::vector<Trade> MatchingEngine::match(OrderVariant incoming) {
       auto& queue = best_level->second;
       LimitOrder& maker = queue.front();  // oldest order at this price level (FIFO)
 
-      Qty fill_qty = std::min(quantity(incoming), maker.quantity());
+      Qty fill_qty = std::min(incoming_order.quantity(), maker.quantity());
 
       trades.push_back({trade_id++,
                         maker.id(), 
-                        id(incoming),
-                        side(incoming),
+                        incoming_order.id(),
+                        incoming_order.side(),
                         maker.price(),
                         fill_qty,
                         std::chrono::steady_clock::now()
                       });
       
-      // incoming->fill(fill_qty);
-      fill(incoming, fill_qty);
-      // maker->fill(fill_qty);
+      incoming_order.fill(fill_qty);
       maker.fill(fill_qty);
 
       // If the maker is fully filled, remove it from the book
       book_.remove_if_filled(maker);
     }
   };
+
+  std::visit(overloaded {
+    [&](LimitOrder& o) {
+      auto price_acceptable = [&](Price resting_price) {
+        return o.side() == Side::BUY ? resting_price <= o.price() : resting_price >= o.price();
+      };
+      o.side() == Side::BUY ? match_order(o, book_.asks_, price_acceptable)
+                            : match_order(o, book_.bids_, price_acceptable);
+    },
+    [&](MarketOrder& o) {
+      auto price_acceptable = [&](Price resting_price) { return true; };
+      o.side() == Side::BUY ? match_order(o, book_.asks_, price_acceptable)
+                            : match_order(o, book_.bids_, price_acceptable);
+    },
+    [](auto&) {
+      throw std::logic_error("only LimitOrder / MarketOrder should reach match() as incoming");
+    }
+  }, incoming);
 
   auto check_marketable_stops = [&]() {
     // Check if stops can become marketable after last trade executed
@@ -106,11 +102,6 @@ std::vector<Trade> MatchingEngine::match(OrderVariant incoming) {
       }
     }
   };
-
-
-  // BUY orders match against asks
-  // SELL orders match against bids
-  side(incoming) == Side::BUY ? match_order(book_.asks_) : match_order(book_.bids_);
 
   check_marketable_stops();
 
@@ -140,8 +131,8 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
   auto trigger = [&](auto& stop_side, Side side) {
     for (auto stop_iter = stop_side.begin(); 
           stop_iter != stop_side.end() && (side == Side::BUY ? stop_iter->first <= last_price : stop_iter->first >= last_price); ) {
-      for (const auto& stop : stop_iter->second) {
-        to_trigger.push_back(std::move(stop));
+      for (auto& stop : stop_iter->second) {
+        to_trigger.push_back(stop);
       }
       stop_iter = stop_side.erase(stop_iter);
     }
@@ -153,24 +144,6 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
   // add sell market stops to to_trigger vector
   trigger(sell_stops_, Side::SELL);
 
-  // for (const auto& stop : to_trigger) {
-
-  //   std::shared_ptr<Order> market {};
-
-  //   if (stop->type_str() == "STOP ORDER") {
-  //      market = std::make_shared<MarketOrder>(stop->id(), stop->side(), stop->quantity());
-  //   } else if (stop->type_str() == "STOP LIMIT ORDER") {
-  //     market = std::make_shared<LimitOrder>(stop->id(), stop->side(), stop->quantity(), stop->price());
-  //   } else {
-  //     std::cerr << "error in check stops - order is neither stop or stop limit\n";
-  //   }
-    
-  //   auto stop_trades = submit(market);
-
-  //   for (const auto& trade : stop_trades) {
-  //     trades.push_back(trade);
-  //   }
-  // }
   for (const auto& stop : to_trigger) {
 
     OrderVariant market = std::visit(overloaded {
@@ -185,7 +158,7 @@ std::vector<Trade> MatchingEngine::check_stops(Price last_price) {
       }
     }, stop);
 
-    auto stop_trades = submit(std::move(market));
+    auto stop_trades = submit(market);
 
     for (const auto& trade : stop_trades) {
       trades.push_back(trade);

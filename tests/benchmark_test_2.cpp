@@ -16,6 +16,17 @@
   ideal to benchmark to quantify the new data structures effectiveness. 
 */
 
+/*
+  Initial Averages: 
+                    10,000 price levels: 0.00089 ms
+                    100,000 price levels: 0.00093 ms
+                    1,000,000 price levels: 0.00100 ms
+  Averages After Changing to std::variant instead of std::make_shared and removing the vtable:
+                    10,000 price levels: 0.0006971 ms
+                    100,000 price levels: 0.0007555433 ms
+                    1,000,000 price levels: 0.000881167 ms             
+*/
+
 struct Benchmark {
   std::chrono::duration<double, std::milli> insert_price_level;
   std::chrono::duration<double, std::milli> find_price_level;
@@ -31,7 +42,7 @@ void populate_book(MatchingEngine& engine, uint64_t num_levels) {
   double starting_price { 1.00 };
 
   while (uid < num_levels) {
-    engine.submit(std::make_shared<LimitOrder>(uid, Side::SELL, 1, starting_price));
+    engine.submit(LimitOrder{uid, Side::SELL, 1, starting_price});
     ++uid;
     ++starting_price;
   }
@@ -52,7 +63,7 @@ std::chrono::duration<double, std::milli> insert_price_level(uint64_t num_levels
   while (i < trials) {
     Price p = num_levels + i + 1;
     auto start = std::chrono::steady_clock::now();
-    engine.submit(std::make_shared<LimitOrder>(p, Side::SELL, 1, double(p)));
+    engine.submit(LimitOrder{p, Side::SELL, 1, double(p)});
     auto end = std::chrono::steady_clock::now();
     time += end - start;
     ++i;

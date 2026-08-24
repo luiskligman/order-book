@@ -18,10 +18,7 @@ using Qty = int64_t;
   Side represents which direction an order is
 
   Uses std::uint8_t (clang-tidy: performance-enum-size) insteaf of the default 
-  int. Sizeof(Order) is still 64 after this change because side_ sits between 
-  two 8-byte-aligned members (id_ before, original_qty_ after).
-  Whatever precedes an 8-byte-aligned field gets padded up to next multiple 
-  of 8 regardless of its own size
+  int. 
 */ 
 enum class Side : std::uint8_t { BUY, SELL };
 
@@ -47,11 +44,6 @@ inline std::string ticks_to_string(Price ticks) {
   return oss.str();
 }
 
-
-// LimitOrder
-// Matches only at the limit price or better
-// is_marketable() returns true because we allow it to attempt a match
-// the matching engine will enfore the price constraint
 class LimitOrder {
   public: 
     LimitOrder(OrderID id, Side side, Qty quantity, double price)
@@ -103,9 +95,6 @@ class LimitOrder {
     std::chrono::time_point<std::chrono::steady_clock> timestamp_;
 };
 
-// MarketOrder
-// Matches at whatever price is available
-// Price is stored as 0.0 since it is irrelevant for market orders
 class MarketOrder {
   public:
     MarketOrder(OrderID id, Side side, Qty quantity)
@@ -149,9 +138,7 @@ class MarketOrder {
 
 };
 
-// StopOrder
-// Sits dormant until the market price crosses the trigger price
-// Once crossed it then becomes a market order
+// Once the stop price is crossed the StopOrder will become a market order
 class StopOrder {
   public:
     StopOrder(OrderID id, Side side, Qty quantity, double stop_price)
@@ -204,7 +191,6 @@ class StopOrder {
     std::chrono::time_point<std::chrono::steady_clock> timestamp_;
 };
 
-// StopLimitOrder
 // Sits dormant until the market price crosses the trigger price
 // Then it becomes a limit order
 class StopLimitOrder {
@@ -271,9 +257,20 @@ class StopLimitOrder {
 
 using OrderVariant = std::variant<LimitOrder, MarketOrder, StopOrder, StopLimitOrder>;
 
+/*
+  template<class... Ts>  is a variadic template parameter where Ts can stand for any number of types. 
+  This is what allows me to hand overloaded{} lambdas.
+
+  struct overload : Ts...  inherits from every one of those lambda-classes simultaneously
+
+  using Ts::operator()...  Explictly pulls all four base operator()s into overloaded's own overload set
+  overloaded is a single object with four legitimate overloads of operator(), one per lambda. Calling it
+  triggers ordinary overload resolution to pick the right one based on argument type
+*/
 template<class... Ts>
 struct overloaded : Ts... { using Ts::operator()...; };
 
+// deduction guide
 template<class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 

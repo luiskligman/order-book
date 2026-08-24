@@ -10,7 +10,7 @@ constexpr int64_t num_orders { 3 };  // number of orders at each price level
 constexpr Qty qty_per_order { 10 };
 constexpr int64_t price_levels { 5 };  // number of price levels above and below starting price
 constexpr double starting_price { 100.00 };
-int64_t uid { 1 };
+uint64_t uid { 1 };
 
 void populate_book(MatchingEngine& engine) {
   double ask_price { starting_price };
@@ -23,8 +23,8 @@ void populate_book(MatchingEngine& engine) {
 
     for (int i = 0; i < num_orders; ++i) {
 
-      engine.submit(std::make_shared<LimitOrder>(uid, Side::SELL, qty_per_order, ask_price));
-      engine.submit(std::make_shared<LimitOrder>(uid + 1, Side::BUY, qty_per_order, bid_price));
+      engine.submit(LimitOrder{uid, Side::SELL, qty_per_order, ask_price});
+      engine.submit(LimitOrder{uid + 1, Side::BUY, qty_per_order, bid_price});
       uid += 2;
 
     }

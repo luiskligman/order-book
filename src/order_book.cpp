@@ -50,7 +50,6 @@ bool OrderBook::cancel_order(OrderID id) {
   };
 
   // Remove from the correct price level on the correct side
-  //order->side() == Side::BUY ? delete_order(bids_) : delete_order(asks_);
   iter->side() == Side::BUY ? delete_order(bids_) : delete_order(asks_);
 
   order_index_.erase(index_entry);
