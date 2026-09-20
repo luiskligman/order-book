@@ -61,7 +61,8 @@ std::chrono::duration<double, std::milli> insert_price_level(uint64_t num_levels
   int i { 0 };
 
   while (i < trials) {
-    Price p = num_levels + i + 1;
+    Price p { num_levels + i + 1 };
+    OrderID { i };
     auto start = std::chrono::steady_clock::now();
     engine.submit(LimitOrder{p, Side::SELL, 1, double(p)});
     auto end = std::chrono::steady_clock::now();

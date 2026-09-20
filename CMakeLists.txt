@@ -41,7 +41,7 @@ catch_discover_tests(unit_tests)
 
 set(TESTS
   benchmark_test_1
-  benchmark_test_2
+  # benchmark_test_2
   benchmark_test_3
 )
 

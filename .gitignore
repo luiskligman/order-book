@@ -1,2 +1,4 @@
 build/
 TODO.md
+.claude/
+.DS_Store
