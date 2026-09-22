@@ -8,6 +8,7 @@ A C++17 limit order book and matching engine that contains price-time priority m
 **Price-time priority matching**: FIFO fill order within each price level  
 **O(1) cancellation**: cancel any resting order, at any queue position, without a scanning  
 **Fixed-point pricing**: prices stored as integer ticks, no floating-point rounding drift  
+**Zero-overhead order model**: value-type orders dispatched via `std::variant`/`std::visit`  
 **Catch2 unit tests**: covering matching, cancellation, and stop-triggering behavior  
 **Benchmarked hot paths**: used before/after times after data structures were changed in order to quantify code efficiency
 
@@ -15,14 +16,18 @@ A C++17 limit order book and matching engine that contains price-time priority m
 
 | File | Responsibility |
 |---|---|
-| `include/order.h` | `Order` base class (Rule-of-Five: copy/move deleted, polymorphic, `shared_ptr` only) and the four order types |
-| `include/order_book.h` / `src/order_book.cpp` | Resting-order storage: `bids_` / `asks_` (`std::map<Price, std::list<OrderPtr>>`), `order_index_` for O(1) lookup / cancel |
-| `include/matching_engine.h` / `src/matching_engine.cpp` | `submit` / `match` / `check_stops` : contains the actual matching and stop-triggering logic |
+| `include/order.h` | Contains four independent order types (`LimitOrder`, `MarketOrder`, `StopOrder`, `StopLimitOrder`) - no shared base class, no virtual dispatch. `OrderVariant = std::variant<...>` plus free functions (`id`, `side`, `quantity`, `original_qty`,`is_marketable`, `type_str`, `toString`, `fill`) that dispatch via `std::visit` |
+| `include/order_book.h` / `src/order_book.cpp` | Resting-order storage: `bids_` / `asks_` (`std::map<Price, std::list<LimitOrder>>`), `order_index_` for O(1) lookup / cancel - stores `LimitOrder` by value, since it's the only type that ever rests |
+| `include/matching_engine.h` / `src/matching_engine.cpp` | `submit` / `match` / `check_stops`: matching and stop-triggering logic, dispatching across `OrderVariant` via `std::visit` and the `overloaded` visitor lambda combinator |
 | `include/trade.h` | `Trade` record produced by filling an order |
 
-**Matching**: `MatchingEngine::submit` routes non-marketable orders (stops) into a dormant book, everything else into `match()`, which walks the resting side's best price level, filling in FIFO order against `queue.front()`, until the incoming order is exhausted or the book is no longer marketable at the incoming order's limit. Any unfilled `LimitOrder` quantity rests in the book on its respective side; an unfilled `MarketOrder` quantity is dropped.
+![Architecture diagram](diagram.png)
 
-**Cancellation**: `order_index_` maps an `OrderID` to both the `shared_ptr<Order>` and a cached `std::list<OrderPtr>::iterator` pointing directly at its slot. Cancelling is a hash lookup, an `O(log n)` price-level lookup, and a direct `list::erase(iterator)`, no scan of the level's queue.
+**Order representation**: `LimitOrder`, `MarketOrder`, `StopOrder`, and `StopLimitOrder` are independent, non-polymorphic value types. Each order type only carries the fields it actually needs (e.g. `MarketOrder` has neither a `price_` nor a `stop_price_`). `OrderVariant` is the closed set any incoming order can be; free functions in `order.h` dispatch across it via `std::visit` for operations every type shares, and the `overloaded` visitor-combinator handles the places behavior differs per type.
+
+**Matching**: `MatchingEngine::submit` routes non-marketable orders (stops) into a dormant book, everything else into `match()`, which visits `incoming` exactly once to resolve its concrete type. The `incoming` order is filled in FIFO order against `queue.front()`, until the order is exhausted or the book is no longer marketable at the  order's limit. Any unfilled `LimitOrder` quantity rests in the book on its respective side; an unfilled `MarketOrder` quantity is dropped.
+
+**Cancellation**: `order_index_` maps an `OrderID` directly to a `std::list<LimitOrder>::iterator` into `bids_`/`asks_` - no separate handle needed, since dereferencing the iterator gives the live order data directly (orders live in the list by value, not by a pointer reference). Cancelling is a hash lookup, an `O(log n)` price-level lookup, and a direct `list::erase(iterator)`, no scan required of the level's queue.
 
 **Fixed-point pricing**: prices are stored as `int64_t` ticks (`PRICE_SCALE = 10,000`), converted once at order construction by using `to_ticks(double)`. Every downstream comparison and match is integer arithmetic, therefore there's no float rounding error that may compound across repeated price comparisons.
 
@@ -98,17 +103,29 @@ Measured on a release build, no address sanitizers, 30-trial average:
 | Cancel mid-queue | 0.141 ms | 0.00086 ms | **~164x** |
 | Cancel tail-of-queue | 0.138 ms | 0.00082 ms | **~169x** |
 
+### `shared_ptr<Order>` + virtual dispatch -> `std::variant`
+
+The `Order` hierarchy (`shared_ptr<Order>` + virtual `is_marketable()`/`type_str()`) was replaced with four independent value types using `std::variant`. This removed the vtable pointer, the per-order heap allocation from `make_shared`, and every atomic `shared_ptr` refcount operation on the hot path.
+
+First working version actually worsened match throughput (438 ns/fill, worse than the 390 ns/fill baseline). It replaced one virtual call per fill iteration with roughly seven separate `std::visit` dispatches per iteration, one for every field access on the incoming order. Fixed by visiting the incoming order exactly once per `match()` call (its type can't change mid-loop, only its quantity does).
+
+Measured on a release build, 30-trial average, 10,000 orders:
+| | Before (`shared_ptr` + virtual) | After (`variant`, visit-once) | Speedup |
+|---|---|---|---|
+| Order construction | 1.1951 ms | 0.547944 ms | ~54% (2.18x) |
+| Match throughput | 3.90039 ms | 2.58867 ms | ~34% (1.51x) |
+
 ### Price-level lookup: 
 
-Measured before rewriting; upon reviewing the results, decided not to rewrite this structure as the number of price levels should remain relatively small and the search already seemed fast enough for the scope of this project
+Measured before rewriting the order representation; the `std::map` structure itself is unchanged (still `O(log n)` red-black tree) - the speedup below is caused by the cheaper order construction from switching the `shared_ptr<Order>` + virtual dispatch to `std::variant`. The number of price levels should stay small in practice, and even at 1M levels the search stayed fast enough for the scope of this project.
 
-| Book depth | Time to insert a new price level |
-|---|---|
-| 10,000 | ~0.00089 ms |
-| 100,000 | ~0.00093 ms | 
-| 1,000,000 | ~0.00100 ms |
+| Book depth | Before (`shared_ptr` + virtual) | After (`variant`) | Speedup |
+|---|---|---|---|
+| 10,000 | 0.00089 ms | 0.0006971 ms | ~22% |
+| 100,000 | 0.00093 ms | 0.0007555 ms | ~19% |
+| 1,000,000 | 0.00100 ms | 0.0008812 ms | ~12% |
 
-A 100x increase in book depth moved the measured cost by under 15%. `log(n)` does not grow fast enough over this range for the tree structure to become a bottleneck
+The percentage shrinks as book depth grows: the construction saving is roughly fixed per insertion, while the `O(log n)` map-insert cost is increasing as the depth grows, so a fixed saving becomes a shrinking slice of a growing total.
 
 ## Testing
 
@@ -117,5 +134,5 @@ The Catch2 test (`tests/order_book_tests.cpp`) covers: cancelling on both sides,
 One of those assertions - checking `best_bid()` after a triggered `StopLimitOrder` caught a real bug where the trigger path was double-converting an already-tick-scaled price through a `double`-taking constructor, quietly resting orders off by a factor of `PRICE_SCALE`.
 
 ## What's Next
-The largest remaining cost center is `shared_ptr<Order>` + virtual dispatch: `sizeof(Order) == 64` (one cache line - 56 bytes of data plus an 8-byte vtable pointer), and every fill / match walks that vtable. The planned next step is a rewrite to a `std::variant` based closed set of order types stored in a contiguous arena. No vtable, no atomic refcounting, no per-order heap allocation. Deliberately deferred until test coverage was solid enough to catch regressions in a rewrite at this magnitude.
+My future plans for this project consist of implementing an arena / contiguous-storage layer, replacing the current per-order-list-node allocation with orders stored contiguously and referenced by index-based handles instead of iterators. Implementing a monotonic sequence counter instead of a `steady_clock::now()` read per order, and closing the remaining `O(log n)` price-level lookup in `cancel_order` by caching a level iterator alongside the order iterator already in `order_index_`.
 
